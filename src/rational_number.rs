@@ -31,6 +31,18 @@ impl RationalNumber {
         f
     }
 
+    pub fn as_i32(&self) -> Result<i32, LibError> {
+        if self.numerator % self.denominator != 0 {
+            Err(LibError::ParseError)
+        } else {
+            let mut n = (self.numerator / self.denominator) as i32;
+            if self.negative {
+                n = n.neg();
+            }
+            Ok(n)
+        }
+    }
+
     pub fn parse(s: &str) -> Result<Self, LibError> {
         if let Some(captures) = Regex::new(MIXED_NUMER_RE).unwrap().captures(s) {
             let negative_str = captures.get(1).unwrap().as_str();
@@ -95,6 +107,10 @@ impl RationalNumber {
         }
     }
 
+    pub fn pow(&self, exp: &RationalNumber) -> RationalNumber {
+        self.as_f32().powf(exp.as_f32()).into()
+    }
+
     pub fn simplify(&self) -> RationalNumber {
         let gcf = math::gcf(self.numerator, self.denominator);
         RationalNumber {
@@ -156,6 +172,32 @@ impl RationalNumber {
                     }
                 }
             }
+        }
+    }
+}
+
+impl From<f32> for RationalNumber {
+    fn from(n: f32) -> Self {
+        RationalNumber::parse(&n.to_string()).expect("failed to parse f32")
+    }
+}
+
+impl From<u32> for RationalNumber {
+    fn from(n: u32) -> Self {
+        RationalNumber {
+            numerator: n,
+            denominator: 1,
+            negative: false,
+        }
+    }
+}
+
+impl From<i32> for RationalNumber {
+    fn from(n: i32) -> Self {
+        RationalNumber {
+            numerator: n.abs() as u32,
+            denominator: 1,
+            negative: n < 0,
         }
     }
 }

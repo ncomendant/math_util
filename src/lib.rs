@@ -19,10 +19,81 @@ enum Operation {
     None(RationalNumber),
 }
 
-fn evaluate(expression: &str) -> Result<RationalNumber, LibError> {
+impl Operation {
+    pub fn evaluate(&self) -> RationalNumber {
+        match self {
+            Operation::Exponent(a, b) => a.evaluate().pow(&b.evaluate()),
+            Operation::Division(a, b) => a.evaluate() / b.evaluate(),
+            Operation::Multiplication(a, b) => a.evaluate() * b.evaluate(),
+            Operation::Addition(a, b) => a.evaluate() + b.evaluate(),
+            Operation::Subtraction(a, b) => a.evaluate() - b.evaluate(),
+            Operation::None(n) => *n
+        }
+    }
+
+    pub fn divide(a: RationalNumber, b: RationalNumber) -> Operation {
+        Operation::Division(Box::new(a.into()), Box::new(b.into()))
+    }
+
+    pub fn multiply(a: RationalNumber, b: RationalNumber) -> Operation {
+        Operation::Multiplication(Box::new(a.into()), Box::new(b.into()))
+    }
+
+    pub fn add(a: RationalNumber, b: RationalNumber) -> Operation {
+        Operation::Addition(Box::new(a.into()), Box::new(b.into()))
+    }
+
+    pub fn subtract(a: RationalNumber, b: RationalNumber) -> Operation {
+        Operation::Subtraction(Box::new(a.into()), Box::new(b.into()))
+    }
+}
+
+impl From<RationalNumber> for Operation {
+    fn from(n: RationalNumber) -> Self {
+        Operation::None(n)
+    }
+}
+
+impl From<u32> for Operation {
+    fn from(n: u32) -> Self {
+        Operation::None(n.into())
+    }
+}
+
+impl From<i32> for Operation {
+    fn from(n: i32) -> Self {
+        Operation::None(n.into())
+    }
+}
+
+impl From<f32> for Operation {
+    fn from(f: f32) -> Self {
+        Operation::None(f.into())
+    }
+}
+
+impl From<u32> for Box<Operation> {
+    fn from(n: u32) -> Self {
+        Box::new(n.into())
+    }
+}
+
+impl From<i32> for Box<Operation> {
+    fn from(n: i32) -> Self {
+        Box::new(n.into())
+    }
+}
+
+impl From<f32> for Box<Operation> {
+    fn from(n: f32) -> Self {
+        Box::new(n.into())
+    }
+}
+
+fn evaluate_str(expression: &str) -> Result<RationalNumber, LibError> {
     if let Some((sub_expr, i)) = find_next_group(expression) {
-        let next_expr = format!("{}{}{}", &expression[0..i], evaluate(&sub_expr)?, &expression[i+sub_expr.len()..]);
-        evaluate(&next_expr)
+        let next_expr = format!("{}{}{}", &expression[0..i], evaluate_str(&sub_expr)?, &expression[i+sub_expr.len()..]);
+        evaluate_str(&next_expr)
     } else {
         println!("time for: {}", expression);
         unimplemented!()
@@ -61,3 +132,20 @@ fn find_next_group(expression: &str) -> Option<(&str, usize)> {
 // fn parse_number_forwards(expression: &str)  -> RationalNumber {
 //
 // }
+
+#[cfg(test)]
+mod tests {
+    use crate::Operation;
+
+    #[test]
+    fn evaluates_raw_operations() {
+        let o = Operation::Addition(2.into(), 3.into());
+        assert_eq!(o.evaluate().as_i32().unwrap(), 5);
+
+        let o = Operation::Addition((-10).into(), 3.into());
+        assert_eq!(o.evaluate().as_i32().unwrap(), -7);
+
+        let o = Operation::Multiplication((-3).into(), Operation::Addition(4.into(), 3.into()).into());
+        assert_eq!(o.evaluate().as_i32().unwrap(), -21);
+    }
+}
