@@ -10,84 +10,77 @@ pub enum LibError {
     ParseError,
 }
 
-enum Operation {
-    Exponent(Box<Operation>, Box<Operation>),
-    Division(Box<Operation>, Box<Operation>),
-    Multiplication(Box<Operation>, Box<Operation>),
-    Addition(Box<Operation>, Box<Operation>),
-    Subtraction(Box<Operation>, Box<Operation>),
-    None(RationalNumber),
+#[derive(Debug, Clone)]
+struct Expression {
+    pub number: RationalNumber,
+    pub parent: Option<Operation>,
 }
 
-impl Operation {
-    pub fn evaluate(&self) -> RationalNumber {
-        match self {
-            Operation::Exponent(a, b) => a.evaluate().pow(&b.evaluate()),
-            Operation::Division(a, b) => a.evaluate() / b.evaluate(),
-            Operation::Multiplication(a, b) => a.evaluate() * b.evaluate(),
-            Operation::Addition(a, b) => a.evaluate() + b.evaluate(),
-            Operation::Subtraction(a, b) => a.evaluate() - b.evaluate(),
-            Operation::None(n) => *n
+impl Expression {
+    pub fn new<T: Into<RationalNumber>>(n: T) -> Self {
+        Expression {
+            number: n.into(),
+            parent: None,
         }
     }
 
-    pub fn divide(a: RationalNumber, b: RationalNumber) -> Operation {
-        Operation::Division(Box::new(a.into()), Box::new(b.into()))
+    pub fn pow<T: Into<RationalNumber>>(&mut self, n: T) -> Self {
+        Expression {
+            parent: Some(Operation::Exponent(Box::new(self.clone()))),
+            number: n.into(),
+        }
     }
 
-    pub fn multiply(a: RationalNumber, b: RationalNumber) -> Operation {
-        Operation::Multiplication(Box::new(a.into()), Box::new(b.into()))
+    pub fn divide<T: Into<RationalNumber>>(&mut self, n: T) -> Self {
+        Expression {
+            parent: Some(Operation::Division(Box::new(self.clone()))),
+            number: n.into(),
+        }
     }
 
-    pub fn add(a: RationalNumber, b: RationalNumber) -> Operation {
-        Operation::Addition(Box::new(a.into()), Box::new(b.into()))
+    pub fn multiply<T: Into<RationalNumber>>(&mut self, n: T) -> Self {
+        Expression {
+            parent: Some(Operation::Multiplication(Box::new(self.clone()))),
+            number: n.into(),
+        }
     }
 
-    pub fn subtract(a: RationalNumber, b: RationalNumber) -> Operation {
-        Operation::Subtraction(Box::new(a.into()), Box::new(b.into()))
+    pub fn add<T: Into<RationalNumber>>(&mut self, n: T) -> Self {
+        Expression {
+            parent: Some(Operation::Addition(Box::new(self.clone()))),
+            number: n.into(),
+        }
+    }
+
+    pub fn subtract<T: Into<RationalNumber>>(&mut self, n: T) -> Self {
+        Expression {
+            parent: Some(Operation::Subtraction(Box::new(self.clone()))),
+            number: n.into(),
+        }
+    }
+
+    pub fn evaluate(&self) -> RationalNumber {
+        if let Some(p) = &self.parent {
+            match p {
+                Operation::Exponent(e) =>  e.evaluate().pow(&self.number),
+                Operation::Division(e) => e.evaluate() / self.number,
+                Operation::Multiplication(e) => e.evaluate() * self.number,
+                Operation::Addition(e) => e.evaluate() + self.number,
+                Operation::Subtraction(e) => e.evaluate() - self.number,
+            }
+        } else {
+            self.number
+        }
     }
 }
 
-impl From<RationalNumber> for Operation {
-    fn from(n: RationalNumber) -> Self {
-        Operation::None(n)
-    }
-}
-
-impl From<u32> for Operation {
-    fn from(n: u32) -> Self {
-        Operation::None(n.into())
-    }
-}
-
-impl From<i32> for Operation {
-    fn from(n: i32) -> Self {
-        Operation::None(n.into())
-    }
-}
-
-impl From<f32> for Operation {
-    fn from(f: f32) -> Self {
-        Operation::None(f.into())
-    }
-}
-
-impl From<u32> for Box<Operation> {
-    fn from(n: u32) -> Self {
-        Box::new(n.into())
-    }
-}
-
-impl From<i32> for Box<Operation> {
-    fn from(n: i32) -> Self {
-        Box::new(n.into())
-    }
-}
-
-impl From<f32> for Box<Operation> {
-    fn from(n: f32) -> Self {
-        Box::new(n.into())
-    }
+#[derive(Debug, Clone)]
+enum Operation {
+    Exponent(Box<Expression>),
+    Division(Box<Expression>),
+    Multiplication(Box<Expression>),
+    Addition(Box<Expression>),
+    Subtraction(Box<Expression>),
 }
 
 fn evaluate_str(expression: &str) -> Result<RationalNumber, LibError> {
@@ -135,17 +128,28 @@ fn find_next_group(expression: &str) -> Option<(&str, usize)> {
 
 #[cfg(test)]
 mod tests {
-    use crate::Operation;
+    use crate::{Operation, Expression};
 
     #[test]
     fn evaluates_raw_operations() {
-        let o = Operation::Addition(2.into(), 3.into());
-        assert_eq!(o.evaluate().as_i32().unwrap(), 5);
+        let e = Expression::new(3).add(5);
+        assert_eq!(e.evaluate().as_i32().unwrap(), 8);
 
-        let o = Operation::Addition((-10).into(), 3.into());
-        assert_eq!(o.evaluate().as_i32().unwrap(), -7);
+        let e = Expression::new(3).add(-5);
+        assert_eq!(e.evaluate().as_i32().unwrap(), -2);
 
-        let o = Operation::Multiplication((-3).into(), Operation::Addition(4.into(), 3.into()).into());
-        assert_eq!(o.evaluate().as_i32().unwrap(), -21);
+        let e = Expression::new(3).subtract(-5);
+        assert_eq!(e.evaluate().as_i32().unwrap(), 8);
+
+        let e = Expression::new(3).divide(-5);
+        assert_eq!(e.evaluate().as_f32(), -0.6);
+
+        let e = Expression::new(1.3).add(0.2);
+        assert_eq!(e.evaluate().as_f32(), 1.5);
+
+        let e = Expression::new(2)
+            .add(3)
+            .multiply(7);
+        assert_eq!(e.evaluate().as_i32().unwrap(), 35);
     }
 }
