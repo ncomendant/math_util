@@ -1,8 +1,9 @@
 use std::{fmt, ops};
-use std::ops::Neg;
+use std::ops::{Neg, Add};
 use regex::Regex;
 use std::str::FromStr;
 use crate::{math, LibError};
+use crate::math::lcm;
 
 const MIXED_NUMER_RE: &str = r"([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)";
 const FRACTION_RE: &str = r"([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)";
@@ -70,7 +71,11 @@ impl RationalNumber {
 
             let negative = negative_str == "-";
             let whole = u32::from_str(whole_str).unwrap();
-            let remainder = u32::from_str(&remainder_str).unwrap();
+            let remainder = if let Ok(r) = u32::from_str(&remainder_str) {
+                r
+            } else {
+                0
+            };
             let denominator = 10u32.pow(remainder_str.len() as u32);
 
             let f = math::gcf(remainder, denominator);
@@ -96,6 +101,22 @@ impl RationalNumber {
             numerator: self.numerator / gcf,
             denominator: self.denominator / gcf,
             negative: self.negative,
+        }
+    }
+
+    pub fn neg(&self) -> RationalNumber {
+        RationalNumber {
+            negative: !self.negative,
+            numerator: self.numerator,
+            denominator: self.denominator,
+        }
+    }
+
+    pub fn reciprocal(&self) -> RationalNumber {
+        RationalNumber {
+            negative: self.negative,
+            numerator: self.denominator,
+            denominator: self.numerator,
         }
     }
 
@@ -149,6 +170,47 @@ impl fmt::Display for RationalNumber {
     }
 }
 
+impl ops::Add<RationalNumber> for RationalNumber {
+    type Output = RationalNumber;
+
+    fn add(self, rhs: RationalNumber) -> Self::Output {
+        let denominator = lcm(self.denominator, rhs.denominator);
+        let self_factor = denominator / self.denominator;
+        let rhs_factor = denominator / rhs.denominator;
+        let self_numerator = self.numerator * self_factor;
+        let rhs_numerator = rhs.numerator * rhs_factor;
+        let numerator;
+        let negative;
+
+        if self.negative == rhs.negative {
+            numerator = self_numerator + rhs_numerator;
+            negative = self.negative;
+        } else {
+            if self_numerator > rhs_numerator {
+                numerator = self.numerator - rhs.numerator;
+                negative = self.negative;
+            } else {
+                numerator = rhs.numerator - self.numerator;
+                negative = rhs.negative;
+            }
+        }
+        RationalNumber {
+            numerator,
+            denominator,
+            negative,
+        }
+    }
+}
+
+impl ops::Sub<RationalNumber> for RationalNumber {
+    type Output = RationalNumber;
+
+    fn sub(self, rhs: RationalNumber) -> Self::Output {
+        self.add(rhs.neg())
+    }
+}
+
+
 impl ops::Mul<RationalNumber> for RationalNumber {
     type Output = RationalNumber;
 
@@ -178,6 +240,44 @@ mod tests {
     use rand::Rng;
     use std::ops::Neg;
     use crate::rational_number::{RationalNumber, NumberPrintFormat};
+
+    #[test]
+    fn adds() {
+        let a = RationalNumber::parse("2.5").unwrap();
+        let b = RationalNumber::parse("1.5").unwrap();
+        assert_eq!((a + b).as_f32(), 4.0);
+
+        let a = RationalNumber::parse("-2.5").unwrap();
+        let b = RationalNumber::parse("1.5").unwrap();
+        assert_eq!((a + b).as_f32(), -1.0);
+
+        let a = RationalNumber::parse("7").unwrap();
+        let b = RationalNumber::parse("2").unwrap();
+        assert_eq!((a + b).as_f32(), 9.0);
+
+        let a = RationalNumber::parse("10").unwrap();
+        let b = RationalNumber::parse("3").unwrap();
+        assert_eq!((a + b).as_f32(), 13.0);
+    }
+
+    #[test]
+    fn subtracts() {
+        let a = RationalNumber::parse("2.5").unwrap();
+        let b = RationalNumber::parse("1.5").unwrap();
+        assert_eq!((a - b).as_f32(), 1.0);
+
+        let a = RationalNumber::parse("-2.5").unwrap();
+        let b = RationalNumber::parse("1.5").unwrap();
+        assert_eq!((a - b).as_f32(), -4.0);
+
+        let a = RationalNumber::parse("7").unwrap();
+        let b = RationalNumber::parse("2").unwrap();
+        assert_eq!((a - b).as_f32(), 5.0);
+
+        let a = RationalNumber::parse("10").unwrap();
+        let b = RationalNumber::parse("3").unwrap();
+        assert_eq!((a - b).as_f32(), 7.0);
+    }
 
     #[test]
     fn parses_specific_decimals() {
