@@ -1,5 +1,7 @@
 use crate::rational_number::RationalNumber;
 use crate::{LibError, evaluate_expression};
+use std::ops;
+use std::ops::{Add, Div};
 
 #[derive(Debug, Clone)]
 pub enum ExpressionValue {
@@ -74,33 +76,33 @@ impl Expression {
         e
     }
 
-    pub fn divide<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-        let mut e = self.clone();
-        e.values.push(n.into());
-        e.operations.push(Operation::Division);
-        e
-    }
-
-    pub fn multiply<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-        let mut e = self.clone();
-        e.values.push(n.into());
-        e.operations.push(Operation::Multiplication);
-        e
-    }
-
-    pub fn add<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-        let mut e = self.clone();
-        e.values.push(n.into());
-        e.operations.push(Operation::Addition);
-        e
-    }
-
-    pub fn subtract<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-        let mut e = self.clone();
-        e.values.push(n.into());
-        e.operations.push(Operation::Subtraction);
-        e
-    }
+    // pub fn divide<T: Into<ExpressionValue>>(&self, n: T) -> Self {
+    //     let mut e = self.clone();
+    //     e.values.push(n.into());
+    //     e.operations.push(Operation::Division);
+    //     e
+    // }
+    //
+    // pub fn multiply<T: Into<ExpressionValue>>(&self, n: T) -> Self {
+    //     let mut e = self.clone();
+    //     e.values.push(n.into());
+    //     e.operations.push(Operation::Multiplication);
+    //     e
+    // }
+    //
+    // pub fn add<T: Into<ExpressionValue>>(&self, n: T) -> Self {
+    //     let mut e = self.clone();
+    //     e.values.push(n.into());
+    //     e.operations.push(Operation::Addition);
+    //     e
+    // }
+    //
+    // pub fn subtract<T: Into<ExpressionValue>>(&self, n: T) -> Self {
+    //     let mut e = self.clone();
+    //     e.values.push(n.into());
+    //     e.operations.push(Operation::Subtraction);
+    //     e
+    // }
 
     pub fn evaluate(&self) -> RationalNumber {
         let mut expr = self.clone();
@@ -132,7 +134,7 @@ impl Expression {
                 ExpressionValue::Expression(sub_expr) => {
                     if let Some(sub_expr) = sub_expr.evaluate_next() {
                         let mut e = self.clone();
-                        std::mem::replace(&mut e.values[i], sub_expr);
+                        e.values[i] = sub_expr;
                         expr = Some(e);
                         evaluated = true;
                         break;
@@ -180,6 +182,50 @@ impl Expression {
     }
 }
 
+impl <T: Into<ExpressionValue>> ops::Div<T> for Expression {
+    type Output = Expression;
+
+    fn div(self, rhs: T) -> Self::Output {
+        let mut e = self.clone();
+        e.values.push(rhs.into());
+        e.operations.push(Operation::Division);
+        e
+    }
+}
+
+impl <T: Into<ExpressionValue>> ops::Mul<T> for Expression {
+    type Output = Expression;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        let mut e = self.clone();
+        e.values.push(rhs.into());
+        e.operations.push(Operation::Multiplication);
+        e
+    }
+}
+
+impl <T: Into<ExpressionValue>> ops::Add<T> for Expression {
+    type Output = Expression;
+
+    fn add(self, rhs: T) -> Self::Output {
+        let mut e = self.clone();
+        e.values.push(rhs.into());
+        e.operations.push(Operation::Addition);
+        e
+    }
+}
+
+impl <T: Into<ExpressionValue>> ops::Sub<T> for Expression {
+    type Output = Expression;
+
+    fn sub(self, rhs: T) -> Self::Output {
+        let mut e = self.clone();
+        e.values.push(rhs.into());
+        e.operations.push(Operation::Subtraction);
+        e
+    }
+}
+
 pub type OperationPriority = u8;
 
 #[derive(Debug, Clone)]
@@ -209,33 +255,31 @@ mod tests {
 
     #[test]
     fn evaluates_raw_operations() {
-        let e = Expression::new(3).add(5);
+        let e = Expression::new(3) + 5;
         assert_eq!(e.evaluate().as_i32().unwrap(), 8);
 
-        let e = Expression::new(3).add(-5);
+        let e = Expression::new(3) + -5;
         assert_eq!(e.evaluate().as_i32().unwrap(), -2);
 
-        let e = Expression::new(3).subtract(-5);
+        let e = Expression::new(3) - -5;
         assert_eq!(e.evaluate().as_i32().unwrap(), 8);
 
-        let e = Expression::new(3).divide(-5);
+        let e = Expression::new(3) / -5;
         assert_eq!(e.evaluate().as_f32(), -0.6);
 
-        let e = Expression::new(1.3).add(0.2);
+        let e = Expression::new(1.3) + 0.2;
         assert_eq!(e.evaluate().as_f32(), 1.5);
 
-        let e = Expression::new(2)
-            .add(3)
-            .multiply(7);
+        let e = Expression::new(2) + 3 * 7;
         assert_eq!(e.evaluate().as_i32().unwrap(), 23);
     }
 
     #[test]
     fn evaluates_with_subexpressions() {
-        let sub_a = Expression::new(4).add(1);
-        let sub_b = Expression::new(5).add(8);
+        let sub_a = Expression::new(4) + 1;
+        let sub_b = Expression::new(5) + 8;
 
-        let e = Expression::new(sub_a).subtract(sub_b);
+        let e = sub_a - sub_b;
         assert_eq!(e.evaluate().as_i32().unwrap(), -8);
     }
 }
