@@ -1,2 +1,2 @@
 # Rust Order of Operations Parser
-A library for evaluating mathematical expressions using order of operations.
+A rust library for evaluating numerical expressions using order of operations.
