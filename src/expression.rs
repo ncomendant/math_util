@@ -1,7 +1,5 @@
 use crate::rational_number::RationalNumber;
-use crate::{LibError};
 use std::ops;
-use std::ops::{Add, Div};
 
 #[derive(Debug, Clone)]
 pub enum ExpressionValue {
@@ -109,7 +107,6 @@ impl Expression {
 
     fn evaluate_next_expression(&self) -> Option<Expression> {
         let mut expr = None;
-        let mut evaluated = false;
         for (i, val) in self.values.iter().enumerate() {
             match val {
                 ExpressionValue::Expression(sub_expr) => {
@@ -117,7 +114,6 @@ impl Expression {
                         let mut e = self.clone();
                         e.values[i] = sub_expr;
                         expr = Some(e);
-                        evaluated = true;
                         break;
                     }
                 }
@@ -130,7 +126,7 @@ impl Expression {
     fn evaluate_next_operation(&self) -> Option<ExpressionValue> {
         let mut next_op: Option<(usize, OperationPriority)> = None;
         for (i, op) in self.operations.iter().enumerate() {
-            if let Some((next_i, next_priority)) = next_op {
+            if let Some((_next_i, next_priority)) = next_op {
                 if op.priority() > next_priority {
                     next_op = Some((i, op.priority()));
                 }
