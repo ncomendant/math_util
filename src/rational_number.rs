@@ -5,9 +5,9 @@ use std::str::FromStr;
 use crate::{math, LibError};
 use crate::math::lcm;
 
-const MIXED_NUMER_RE: &str = r"([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)";
-const FRACTION_RE: &str = r"([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)";
-const DECIMAL_RE: &str = r"([+-]?)(?:\s*)(\d+).?(\d*)";
+const MIXED_NUMER_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
+const FRACTION_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
+const DECIMAL_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)\.?(\d*)(?:\s*)$";
 
 pub enum NumberPrintFormat {
     Decimal,
@@ -141,9 +141,17 @@ impl RationalNumber {
             NumberPrintFormat::Decimal => {
                 let remainder = self.numerator % self.denominator;
                 if remainder == 0 {
-                    (self.numerator / self.denominator).to_string()
+                    if self.negative {
+                        format!("-{}", (self.numerator / self.denominator))
+                    } else {
+                        (self.numerator / self.denominator).to_string()
+                    }
                 } else {
-                    self.as_f32().to_string()
+                    if self.negative {
+                        format!("-{}", self.as_f32())
+                    } else {
+                        self.as_f32().to_string()
+                    }
                 }
             }
             NumberPrintFormat::Fraction => {
@@ -229,13 +237,14 @@ impl ops::Add<RationalNumber> for RationalNumber {
             negative = self.negative;
         } else {
             if self_numerator > rhs_numerator {
-                numerator = self.numerator - rhs.numerator;
+                numerator = self_numerator - rhs_numerator;
                 negative = self.negative;
             } else {
-                numerator = rhs.numerator - self.numerator;
+                numerator = rhs_numerator - self_numerator;
                 negative = rhs.negative;
             }
         }
+
         RationalNumber {
             numerator,
             denominator,
@@ -394,7 +403,6 @@ mod tests {
             let neg_str = if rng.gen_bool(0.5) { "-" } else { "" };
 
             let mixed_number_str = format!("{}{} {}/{}", neg_str, whole, numerator, denominator);
-            println!("{}", mixed_number_str);
             assert_eq!(
                 RationalNumber::parse(&mixed_number_str)
                     .unwrap()
