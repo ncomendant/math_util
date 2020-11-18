@@ -1,5 +1,6 @@
 use crate::rational_number::RationalNumber;
 use std::ops;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum ExpressionValue {
@@ -159,6 +160,36 @@ impl Expression {
     }
 }
 
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut s: String = "".to_string();
+        for (i, val) in self.values.iter().enumerate() {
+
+            let val = match val {
+                ExpressionValue::Expression(e) => format!("({})", e),
+                ExpressionValue::Number(n) => n.as_str(None),
+           };
+
+            let op = match self.operations.get(i) {
+                Some(op) => match op {
+                    Operation::Exponent => Some("^"),
+                    Operation::Division => Some(" -: "),
+                    Operation::Multiplication => Some(" * "),
+                    Operation::Addition => Some(" + "),
+                    Operation::Subtraction => Some(" - "),
+                },
+                None => None,
+            };
+
+            s.push_str(&val);
+            if let Some(op) = op {
+                s.push_str(op);
+            }
+        }
+        write!(f, "{}", s)
+    }
+}
+
 impl <T: Into<ExpressionValue>> ops::Div<T> for Expression {
     type Output = Expression;
 
@@ -229,6 +260,7 @@ impl Operation {
 #[cfg(test)]
 mod tests {
     use crate::expression::Expression;
+    use crate::rational_number::NumberDisplayFormat;
 
     #[test]
     fn evaluates_raw_operations() {
@@ -250,8 +282,8 @@ mod tests {
         let e = Expression::new(1.3) + 0.2;
         assert_eq!(e.evaluate().as_f32(), 1.5);
 
-        let e = Expression::new(2) + 3 * 7;
-        assert_eq!(e.evaluate().as_i32().unwrap(), 23);
+        let e = crate::parse_expression("(2 + 3)/2 * 7^2").unwrap();
+        assert_eq!(e.evaluate().as_str(Some(NumberDisplayFormat::Mixed)), "122 1/2");
     }
 
     #[test]
