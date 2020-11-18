@@ -1,12 +1,11 @@
-#![allow(dead_code)]
-
 use crate::rational_number::{RationalNumber};
 use regex::Regex;
 use crate::expression::{Expression, Operation, ExpressionValue};
 
-mod rational_number;
+pub mod rational_number;
+pub mod expression;
 mod math;
-mod expression;
+
 
 const EXPONENT_RE: &str = r"^(?:\s*)\^(?:\s*)$";
 const DIVISION_RE: &str = r"^(?:\s*)(?:/|\-:)(?:\s*)$";
@@ -19,7 +18,7 @@ pub enum LibError {
     ParseError,
 }
 
-fn parse_expression(s: &str) -> Result<Expression, LibError> {
+pub fn parse_expression(s: &str) -> Result<Expression, LibError> {
     println!("{}", s);
 
     let mut index = 0;
@@ -151,7 +150,7 @@ mod tests {
 
     #[test]
     fn parses_strings() {
-        let e = parse_expression("3.1+1/2 * -5").unwrap();
+        let e = parse_expression("3.1+1-:2 * -5").unwrap();
         assert_eq!(e.evaluate().simplify().as_str(NumberPrintFormat::Decimal), "0.6");
 
         let e = parse_expression("8/4 * 2 + -3 - 12").unwrap();

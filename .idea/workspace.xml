@@ -7,7 +7,6 @@
     <list default="true" id="0c05c63a-fb48-4d34-9279-80846975ff9c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rational_number.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rational_number.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,7 +37,7 @@
   <component name="PropertiesComponent">
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../rust_crates/server_util" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
@@ -58,10 +57,10 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state x="665" y="419" key="#com.intellij.ide.util.MemberChooser" timestamp="1605476351231">
+    <state x="665" y="419" key="#com.intellij.ide.util.MemberChooser" timestamp="1605628537363">
       <screen x="0" y="0" width="3440" height="1400" />
     </state>
-    <state x="665" y="419" key="#com.intellij.ide.util.MemberChooser/0.0.3440.1400/3440.0.1920.1080@0.0.3440.1400" timestamp="1605476351231" />
+    <state x="665" y="419" key="#com.intellij.ide.util.MemberChooser/0.0.3440.1400/3440.0.1920.1080@0.0.3440.1400" timestamp="1605628537363" />
     <state x="640" y="458" key="FileChooserDialogImpl" timestamp="1605434661462">
       <screen x="0" y="0" width="3440" height="1400" />
     </state>
