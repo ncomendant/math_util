@@ -1,5 +1,5 @@
 use crate::rational_number::RationalNumber;
-use crate::{LibError, evaluate_expression};
+use crate::{LibError};
 use std::ops;
 use std::ops::{Add, Div};
 
@@ -57,8 +57,8 @@ impl From<f32> for ExpressionValue {
 
 #[derive(Debug, Clone)]
 pub struct Expression {
-    pub values: Vec<ExpressionValue>,
-    pub operations: Vec<Operation>,
+    values: Vec<ExpressionValue>,
+    operations: Vec<Operation>,
 }
 
 impl Expression {
@@ -76,33 +76,12 @@ impl Expression {
         e
     }
 
-    // pub fn divide<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-    //     let mut e = self.clone();
-    //     e.values.push(n.into());
-    //     e.operations.push(Operation::Division);
-    //     e
-    // }
-    //
-    // pub fn multiply<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-    //     let mut e = self.clone();
-    //     e.values.push(n.into());
-    //     e.operations.push(Operation::Multiplication);
-    //     e
-    // }
-    //
-    // pub fn add<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-    //     let mut e = self.clone();
-    //     e.values.push(n.into());
-    //     e.operations.push(Operation::Addition);
-    //     e
-    // }
-    //
-    // pub fn subtract<T: Into<ExpressionValue>>(&self, n: T) -> Self {
-    //     let mut e = self.clone();
-    //     e.values.push(n.into());
-    //     e.operations.push(Operation::Subtraction);
-    //     e
-    // }
+    pub fn push<T: Into<ExpressionValue>>(&self, operation: Operation, value: T) -> Self {
+        let mut e = self.clone();
+        e.operations.push(operation);
+        e.values.push(value.into());
+        e
+    }
 
     pub fn evaluate(&self) -> RationalNumber {
         let mut expr = self.clone();
@@ -112,6 +91,8 @@ impl Expression {
                     ExpressionValue::Expression(e) => expr = e,
                     ExpressionValue::Number(n) => return n,
                 }
+            } else { // if expression is only a number
+                return expr.values.get(0).expect("failed to get number").number().clone();
             }
         }
     }
@@ -255,6 +236,9 @@ mod tests {
 
     #[test]
     fn evaluates_raw_operations() {
+        let e = Expression::new(7);
+        assert_eq!(e.evaluate().as_i32().unwrap(), 7);
+
         let e = Expression::new(3) + 5;
         assert_eq!(e.evaluate().as_i32().unwrap(), 8);
 
