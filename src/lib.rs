@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use crate::rational_number::{RationalNumber, NumberPrintFormat};
+use crate::rational_number::{RationalNumber};
 use regex::Regex;
-use crate::expression::{Expression, Operation};
+use crate::expression::{Expression, Operation, ExpressionValue};
 
 mod rational_number;
 mod math;
@@ -19,30 +19,42 @@ pub enum LibError {
     ParseError,
 }
 
-fn parse_expression(expression_str: &str) -> Result<Expression, LibError> {
+fn parse_expression(s: &str) -> Result<Expression, LibError> {
+    println!("{}", s);
+
     let mut index = 0;
 
-    if let Some((i, n)) = parse_number_forwards(expression_str) {
-        index += i;
-        let mut expr = Expression::new(n);
-        while index < expression_str.len() {
-            if let Some((i, op)) = parse_operation_forwards(&expression_str[index..]) {
-                index += i;
-                if let Some((i, n)) = parse_number_forwards(&expression_str[index..]) {
-                    index += i;
-                    expr = expr.push(op, n);
-                }
-            } else {
-                return Err(LibError::ParseError);
-            }
+    let (i, val) = parse_first_expression_value(s)?;
+    println!("{:?}", val);
+
+    index += i;
+
+    let mut expr = Expression::new(val);
+    while index < s.len() {
+        if let Some((i, op)) = parse_first_operation(&s[index..]) {
+            index += i;
+            let (i, val) = parse_first_expression_value(&s[index..])?;
+            index += i;
+            expr = expr.push(op, val);
+        } else {
+            return Err(LibError::ParseError);
         }
-        Ok(expr)
-    } else {
-        Err(LibError::ParseError)
     }
+    Ok(expr)
 }
 
-fn parse_operation_forwards(expression: &str) -> Option<(usize, Operation)> {
+fn parse_first_expression_value(s: &str) -> Result<(usize, ExpressionValue), LibError> {
+    if let Some((i, n)) = parse_first_number(s) {
+        return Ok((i, n.into()));
+    } else if let Ok(expr) = parse_first_expression(s) {
+        if let Some((i, expr)) = expr {
+            return Ok((i, expr.into()));
+        }
+    }
+    Err(LibError::ParseError)
+}
+
+fn parse_first_operation(expression: &str) -> Option<(usize, Operation)> {
     let exponent_re = Regex::new(EXPONENT_RE).expect("invalid regex");
     let division_re = Regex::new(DIVISION_RE).expect("invalid regex");
     let multiplication_re = Regex::new(MULTIPLICATION_RE).expect("invalid regex");
@@ -68,7 +80,7 @@ fn parse_operation_forwards(expression: &str) -> Option<(usize, Operation)> {
     n
 }
 
-fn parse_number_forwards(expression: &str) -> Option<(usize, RationalNumber)> {
+fn parse_first_number(expression: &str) -> Option<(usize, RationalNumber)> {
     let mut n = None;
     for i in 0..=expression.len() {
         if let Ok(num) = RationalNumber::parse(&expression[0..i]) {
@@ -76,6 +88,60 @@ fn parse_number_forwards(expression: &str) -> Option<(usize, RationalNumber)> {
         }
     }
     n
+}
+
+fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)>, LibError> {
+    let mut is_bracket = None;
+    let mut start = None;
+    let mut end = None;
+    let mut depth = 0;
+    for (i, c) in expression.chars().enumerate() {
+        if let Some(is_bracket) = is_bracket {
+            if is_bracket {
+                if c == '[' {
+                    depth += 1;
+                } else if c == ']' {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i); // do not including grouping symbol at end
+                        break;
+                    }
+                }
+            } else {
+                if c == '(' {
+                    depth += 1;
+                } else if c == ')' {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i); // do not including grouping symbol at end
+                        break;
+                    }
+                }
+            }
+        } else {
+            if c == '(' {
+                is_bracket = Some(false);
+                start = Some(i+1); // do not including grouping symbol at start
+                depth = 1;
+            } else if c == '[' {
+                is_bracket = Some(true);
+                start = Some(i+1); // do not including grouping symbol at start
+                depth = 1;
+            }
+        }
+    }
+
+    if let Some(start) = start {
+        let end = end.ok_or(LibError::ParseError)?;
+        if start < end {
+            let sub_expr = parse_expression(&expression[start..end])?;
+            Ok(Some((end + 1, sub_expr)))
+        } else {
+            Err(LibError::ParseError)
+        }
+    } else {
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
@@ -90,5 +156,8 @@ mod tests {
 
         let e = parse_expression("8/4 * 2 + -3 - 12").unwrap();
         assert_eq!(e.evaluate().simplify().as_str(NumberPrintFormat::Decimal), "-11");
+
+        let e = parse_expression("(3 + 1) * (4 - 7)").unwrap();
+        assert_eq!(e.evaluate().simplify().as_str(NumberPrintFormat::Decimal), "-12");
     }
 }
