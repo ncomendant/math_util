@@ -2,14 +2,15 @@ use std::{fmt, ops};
 use std::ops::{Neg, Add};
 use regex::Regex;
 use std::str::FromStr;
-use crate::{math, LibError};
+use crate::{math, OooParserError};
 use crate::math::lcm;
 
 const MIXED_NUMER_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const FRACTION_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const DECIMAL_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)\.?(\d*)(?:\s*)$";
 
-pub enum NumberPrintFormat {
+#[derive(Debug, Copy, Clone)]
+pub enum NumberDisplayFormat {
     Decimal,
     Fraction,
     Mixed,
@@ -20,6 +21,7 @@ pub struct RationalNumber {
     pub numerator: u32,
     pub denominator: u32,
     pub negative: bool,
+    pub format: NumberDisplayFormat,
 }
 
 impl RationalNumber {
@@ -31,9 +33,9 @@ impl RationalNumber {
         f
     }
 
-    pub fn as_i32(&self) -> Result<i32, LibError> {
+    pub fn as_i32(&self) -> Result<i32, OooParserError> {
         if self.numerator % self.denominator != 0 {
-            Err(LibError::ParseError)
+            Err(OooParserError::ParseError)
         } else {
             let mut n = (self.numerator / self.denominator) as i32;
             if self.negative {
@@ -43,7 +45,7 @@ impl RationalNumber {
         }
     }
 
-    pub fn parse(s: &str) -> Result<Self, LibError> {
+    pub fn parse(s: &str) -> Result<Self, OooParserError> {
         if let Some(captures) = Regex::new(MIXED_NUMER_RE).unwrap().captures(s) {
             let negative_str = captures.get(1).unwrap().as_str();
             let whole_str = captures.get(2).unwrap().as_str();
@@ -61,6 +63,7 @@ impl RationalNumber {
                 negative,
                 numerator,
                 denominator,
+                format: NumberDisplayFormat::Mixed,
             })
         } else if let Some(captures) = Regex::new(FRACTION_RE).unwrap().captures(s) {
             let negative_str = captures.get(1).unwrap().as_str();
@@ -71,10 +74,17 @@ impl RationalNumber {
             let numerator = u32::from_str(&numerator_str).unwrap();
             let denominator = u32::from_str(&denominator_str).unwrap();
 
+            let format = if numerator >= denominator {
+                NumberDisplayFormat::Fraction
+            } else {
+                NumberDisplayFormat::Mixed
+            };
+
             Ok(RationalNumber {
                 negative,
                 numerator,
                 denominator,
+                format,
             })
         } else if let Some(captures) = Regex::new(DECIMAL_RE).unwrap().captures(s) {
             let negative_str = captures.get(1).unwrap().as_str();
@@ -101,9 +111,10 @@ impl RationalNumber {
                 numerator,
                 denominator,
                 negative,
+                format: NumberDisplayFormat::Decimal,
             })
         } else {
-            Err(LibError::ParseError)
+            Err(OooParserError::ParseError)
         }
     }
 
@@ -117,6 +128,7 @@ impl RationalNumber {
             numerator: self.numerator / gcf,
             denominator: self.denominator / gcf,
             negative: self.negative,
+            format: self.format,
         }
     }
 
@@ -125,6 +137,7 @@ impl RationalNumber {
             negative: !self.negative,
             numerator: self.numerator,
             denominator: self.denominator,
+            format: self.format,
         }
     }
 
@@ -133,12 +146,18 @@ impl RationalNumber {
             negative: self.negative,
             numerator: self.denominator,
             denominator: self.numerator,
+            format: self.format,
         }
     }
 
-    pub fn as_str(&self, format: NumberPrintFormat) -> String {
+    pub fn as_str(&self, format: Option<NumberDisplayFormat>) -> String {
+        let format = match format {
+            Some(f) => f,
+            None => self.format,
+        };
+
         match format {
-            NumberPrintFormat::Decimal => {
+            NumberDisplayFormat::Decimal => {
                 let remainder = self.numerator % self.denominator;
                 if remainder == 0 {
                     if self.negative {
@@ -154,18 +173,18 @@ impl RationalNumber {
                     }
                 }
             }
-            NumberPrintFormat::Fraction => {
+            NumberDisplayFormat::Fraction => {
                 if self.negative {
                     format!("-{}/{}", self.numerator, self.denominator)
                 } else {
                     format!("{}/{}", self.numerator, self.denominator)
                 }
             }
-            NumberPrintFormat::Mixed => {
+            NumberDisplayFormat::Mixed => {
                 let whole = self.numerator / self.denominator;
                 let remainder = self.numerator % self.denominator;
                 if self.numerator < self.denominator {
-                    self.as_str(NumberPrintFormat::Fraction)
+                    self.as_str(Some(NumberDisplayFormat::Fraction))
                 } else if remainder == 0 {
                     if self.negative {
                         format!("-{}", whole)
@@ -196,6 +215,8 @@ impl From<u32> for RationalNumber {
             numerator: n,
             denominator: 1,
             negative: false,
+            format: NumberDisplayFormat::Decimal,
+
         }
     }
 }
@@ -206,6 +227,7 @@ impl From<i32> for RationalNumber {
             numerator: n.abs() as u32,
             denominator: 1,
             negative: n < 0,
+            format: NumberDisplayFormat::Decimal,
         }
     }
 }
@@ -249,6 +271,7 @@ impl ops::Add<RationalNumber> for RationalNumber {
             numerator,
             denominator,
             negative,
+            format: evaluated_format(&self, &rhs),
         }
     }
 }
@@ -261,7 +284,6 @@ impl ops::Sub<RationalNumber> for RationalNumber {
     }
 }
 
-
 impl ops::Mul<RationalNumber> for RationalNumber {
     type Output = RationalNumber;
 
@@ -270,6 +292,7 @@ impl ops::Mul<RationalNumber> for RationalNumber {
             numerator: self.numerator * rhs.numerator,
             denominator : self.denominator * rhs.denominator,
             negative: self.negative != rhs.negative,
+            format: evaluated_format(&self, &rhs),
         }
     }
 }
@@ -282,7 +305,16 @@ impl ops::Div<RationalNumber> for RationalNumber {
             numerator: self.numerator * rhs.denominator,
             denominator : self.denominator * rhs.numerator,
             negative: self.negative != rhs.negative,
+            format: evaluated_format(&self, &rhs),
         }
+    }
+}
+
+fn evaluated_format(a: &RationalNumber, b: &RationalNumber) -> NumberDisplayFormat {
+    if a.simplify().denominator == 1 {
+        b.format
+    } else {
+        a.format
     }
 }
 
@@ -290,7 +322,7 @@ impl ops::Div<RationalNumber> for RationalNumber {
 mod tests {
     use rand::Rng;
     use std::ops::Neg;
-    use crate::rational_number::{RationalNumber, NumberPrintFormat};
+    use crate::rational_number::{RationalNumber, NumberDisplayFormat};
 
     #[test]
     fn adds() {
@@ -353,19 +385,19 @@ mod tests {
         assert_eq!(
             RationalNumber::parse("1/3")
                 .unwrap()
-                .as_str(NumberPrintFormat::Fraction),
+                .as_str(None),
             "1/3"
         );
         assert_eq!(
             RationalNumber::parse("7/5")
                 .unwrap()
-                .as_str(NumberPrintFormat::Fraction),
+                .as_str(None),
             "7/5"
         );
         assert_eq!(
             RationalNumber::parse("10/20")
                 .unwrap()
-                .as_str(NumberPrintFormat::Fraction),
+                .as_str(None),
             "10/20"
         );
     }
@@ -375,20 +407,20 @@ mod tests {
         assert_eq!(
             RationalNumber::parse("2 1/5")
                 .unwrap()
-                .as_str(NumberPrintFormat::Mixed),
+                .as_str(None),
             "2 1/5"
         );
         assert_eq!(
             RationalNumber::parse("-2 1/5")
                 .unwrap()
-                .as_str(NumberPrintFormat::Mixed),
+                .as_str(None),
             "-2 1/5"
         );
         assert_eq!(
             RationalNumber::parse("5 4/10")
                 .unwrap()
-                .as_str(NumberPrintFormat::Mixed),
-            "5 4/10"
+                .as_str(Some(NumberDisplayFormat::Decimal)),
+            "5.4"
         );
     }
 
@@ -406,7 +438,7 @@ mod tests {
             assert_eq!(
                 RationalNumber::parse(&mixed_number_str)
                     .unwrap()
-                    .as_str(NumberPrintFormat::Mixed),
+                    .as_str(Some(NumberDisplayFormat::Mixed)),
                 mixed_number_str
             );
         }
