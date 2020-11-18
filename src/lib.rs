@@ -14,17 +14,14 @@ const ADDITION_RE: &str = r"^(?:\s*)\+(?:\s*)$";
 const SUBTRACTION_RE: &str = r"^(?:\s*)\-(?:\s*)$";
 
 #[derive(Debug, Copy, Clone)]
-pub enum LibError {
+pub enum OooParserError {
     ParseError,
 }
 
-pub fn parse_expression(s: &str) -> Result<Expression, LibError> {
-    println!("{}", s);
-
+pub fn parse_expression(s: &str) -> Result<Expression, OooParserError> {
     let mut index = 0;
 
     let (i, val) = parse_first_expression_value(s)?;
-    println!("{:?}", val);
 
     index += i;
 
@@ -36,13 +33,13 @@ pub fn parse_expression(s: &str) -> Result<Expression, LibError> {
             index += i;
             expr = expr.push(op, val);
         } else {
-            return Err(LibError::ParseError);
+            return Err(OooParserError::ParseError);
         }
     }
     Ok(expr)
 }
 
-fn parse_first_expression_value(s: &str) -> Result<(usize, ExpressionValue), LibError> {
+fn parse_first_expression_value(s: &str) -> Result<(usize, ExpressionValue), OooParserError> {
     if let Some((i, n)) = parse_first_number(s) {
         return Ok((i, n.into()));
     } else if let Ok(expr) = parse_first_expression(s) {
@@ -50,7 +47,7 @@ fn parse_first_expression_value(s: &str) -> Result<(usize, ExpressionValue), Lib
             return Ok((i, expr.into()));
         }
     }
-    Err(LibError::ParseError)
+    Err(OooParserError::ParseError)
 }
 
 fn parse_first_operation(expression: &str) -> Option<(usize, Operation)> {
@@ -89,7 +86,7 @@ fn parse_first_number(expression: &str) -> Option<(usize, RationalNumber)> {
     n
 }
 
-fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)>, LibError> {
+fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)>, OooParserError> {
     let mut is_bracket = None;
     let mut start = None;
     let mut end = None;
@@ -131,12 +128,12 @@ fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)
     }
 
     if let Some(start) = start {
-        let end = end.ok_or(LibError::ParseError)?;
+        let end = end.ok_or(OooParserError::ParseError)?;
         if start < end {
             let sub_expr = parse_expression(&expression[start..end])?;
             Ok(Some((end + 1, sub_expr)))
         } else {
-            Err(LibError::ParseError)
+            Err(OooParserError::ParseError)
         }
     } else {
         Ok(None)
@@ -146,17 +143,16 @@ fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)
 #[cfg(test)]
 mod tests {
     use crate::parse_expression;
-    use crate::rational_number::NumberPrintFormat;
 
     #[test]
     fn parses_strings() {
         let e = parse_expression("3.1+1-:2 * -5").unwrap();
-        assert_eq!(e.evaluate().simplify().as_str(NumberPrintFormat::Decimal), "0.6");
+        assert_eq!(e.evaluate().simplify().as_str(None), "0.6");
 
         let e = parse_expression("8/4 * 2 + -3 - 12").unwrap();
-        assert_eq!(e.evaluate().simplify().as_str(NumberPrintFormat::Decimal), "-11");
+        assert_eq!(e.evaluate().simplify().as_str(None), "-11");
 
         let e = parse_expression("(3 + 1) * (4 - 7)").unwrap();
-        assert_eq!(e.evaluate().simplify().as_str(NumberPrintFormat::Decimal), "-12");
+        assert_eq!(e.evaluate().simplify().as_str(None), "-12");
     }
 }
