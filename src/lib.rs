@@ -32,10 +32,14 @@ pub fn parse_expression(s: &str) -> Result<Expression, OooParserError> {
             let (i, val) = parse_first_expression_value(&s[index..])?;
             index += i;
             expr = expr.push(op, val);
+        } else if let Some((i, val)) = parse_first_expression(&s[index..])? { // implied multiplication
+            index += i;
+            expr = expr.push(Operation::Multiplication, val);
         } else {
             return Err(OooParserError::ParseError);
         }
     }
+
     Ok(expr)
 }
 
@@ -154,5 +158,14 @@ mod tests {
 
         let e = parse_expression("(3 + 1) * (4 - 7)").unwrap();
         assert_eq!(e.evaluate().simplify().as_str(None), "-12");
+
+        let e = parse_expression("(2)").unwrap();
+        assert_eq!(e.evaluate().simplify().as_str(None), "2");
+
+        let e = parse_expression("(2)^2(-3)(-4)").unwrap();
+        assert_eq!(e.evaluate().simplify().as_str(None), "48");
+
+        let e = parse_expression("3(3 + 1) - (2 + 1)^3").unwrap();
+        assert_eq!(e.evaluate().simplify().as_str(None), "-15");
     }
 }
