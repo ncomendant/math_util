@@ -68,6 +68,14 @@ impl Expression {
         }
     }
 
+    pub fn values(&self) -> &Vec<ExpressionValue> {
+        &self.values
+    }
+
+    pub fn operations(&self) -> &Vec<Operation> {
+        &self.operations
+    }
+
     pub fn pow<T: Into<ExpressionValue>>(&self, n: T) -> Self {
         let mut e = self.clone();
         e.values.push(n.into());
@@ -125,6 +133,10 @@ impl Expression {
     }
 
     fn evaluate_next_operation(&self) -> Option<ExpressionValue> {
+        if self.values.len() == 1 {
+            return Some(self.values.get(0).expect("failed to get only value").clone());
+        }
+
         let mut next_op: Option<(usize, OperationPriority)> = None;
         for (i, op) in self.operations.iter().enumerate() {
             if let Some((_next_i, next_priority)) = next_op {
