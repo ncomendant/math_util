@@ -1,9 +1,9 @@
-use std::{fmt, ops};
-use std::ops::{Neg, Add};
-use regex::Regex;
-use std::str::FromStr;
-use crate::{math, OooParserError};
 use crate::math::lcm;
+use crate::{math, OooParserError};
+use regex::Regex;
+use std::ops::{Add, Neg};
+use std::str::FromStr;
+use std::{fmt, ops};
 
 const MIXED_NUMER_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const FRACTION_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
@@ -216,7 +216,6 @@ impl From<u32> for RationalNumber {
             denominator: 1,
             negative: false,
             format: NumberDisplayFormat::Decimal,
-
         }
     }
 }
@@ -290,7 +289,7 @@ impl ops::Mul<RationalNumber> for RationalNumber {
     fn mul(self, rhs: RationalNumber) -> Self::Output {
         RationalNumber {
             numerator: self.numerator * rhs.numerator,
-            denominator : self.denominator * rhs.denominator,
+            denominator: self.denominator * rhs.denominator,
             negative: self.negative != rhs.negative,
             format: evaluated_format(&self, &rhs),
         }
@@ -303,7 +302,7 @@ impl ops::Div<RationalNumber> for RationalNumber {
     fn div(self, rhs: RationalNumber) -> Self::Output {
         RationalNumber {
             numerator: self.numerator * rhs.denominator,
-            denominator : self.denominator * rhs.numerator,
+            denominator: self.denominator * rhs.numerator,
             negative: self.negative != rhs.negative,
             format: evaluated_format(&self, &rhs),
         }
@@ -320,9 +319,9 @@ fn evaluated_format(a: &RationalNumber, b: &RationalNumber) -> NumberDisplayForm
 
 #[cfg(test)]
 mod tests {
+    use crate::rational_number::{NumberDisplayFormat, RationalNumber};
     use rand::Rng;
     use std::ops::Neg;
-    use crate::rational_number::{RationalNumber, NumberDisplayFormat};
 
     #[test]
     fn adds() {
@@ -382,22 +381,10 @@ mod tests {
 
     #[test]
     fn parses_specific_fractions() {
+        assert_eq!(RationalNumber::parse("1/3").unwrap().as_str(None), "1/3");
+        assert_eq!(RationalNumber::parse("7/5").unwrap().as_str(None), "7/5");
         assert_eq!(
-            RationalNumber::parse("1/3")
-                .unwrap()
-                .as_str(None),
-            "1/3"
-        );
-        assert_eq!(
-            RationalNumber::parse("7/5")
-                .unwrap()
-                .as_str(None),
-            "7/5"
-        );
-        assert_eq!(
-            RationalNumber::parse("10/20")
-                .unwrap()
-                .as_str(None),
+            RationalNumber::parse("10/20").unwrap().as_str(None),
             "10/20"
         );
     }
@@ -405,15 +392,11 @@ mod tests {
     #[test]
     fn parses_specific_mixed_numbers() {
         assert_eq!(
-            RationalNumber::parse("2 1/5")
-                .unwrap()
-                .as_str(None),
+            RationalNumber::parse("2 1/5").unwrap().as_str(None),
             "2 1/5"
         );
         assert_eq!(
-            RationalNumber::parse("-2 1/5")
-                .unwrap()
-                .as_str(None),
+            RationalNumber::parse("-2 1/5").unwrap().as_str(None),
             "-2 1/5"
         );
         assert_eq!(

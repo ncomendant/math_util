@@ -1,11 +1,10 @@
-use crate::rational_number::{RationalNumber};
+use crate::expression::{Expression, ExpressionValue, Operation};
+use crate::rational_number::RationalNumber;
 use regex::Regex;
-use crate::expression::{Expression, Operation, ExpressionValue};
 
-pub mod rational_number;
 pub mod expression;
 mod math;
-
+pub mod rational_number;
 
 const EXPONENT_RE: &str = r"^(?:\s*)\^(?:\s*)$";
 const DIVISION_RE: &str = r"^(?:\s*)(?:/|\-:)(?:\s*)$";
@@ -32,7 +31,8 @@ pub fn parse_expression(s: &str) -> Result<Expression, OooParserError> {
             let (i, val) = parse_first_expression_value(&s[index..])?;
             index += i;
             expr = expr.push(op, val);
-        } else if let Some((i, val)) = parse_first_expression(&s[index..])? { // implied multiplication
+        } else if let Some((i, val)) = parse_first_expression(&s[index..])? {
+            // implied multiplication
             index += i;
             expr = expr.push(Operation::Multiplication, val);
         } else {
@@ -121,11 +121,11 @@ fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)
         } else {
             if c == '(' {
                 is_bracket = Some(false);
-                start = Some(i+1); // do not including grouping symbol at start
+                start = Some(i + 1); // do not including grouping symbol at start
                 depth = 1;
             } else if c == '[' {
                 is_bracket = Some(true);
-                start = Some(i+1); // do not including grouping symbol at start
+                start = Some(i + 1); // do not including grouping symbol at start
                 depth = 1;
             }
         }

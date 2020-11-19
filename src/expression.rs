@@ -1,6 +1,6 @@
 use crate::rational_number::RationalNumber;
-use std::ops;
 use std::fmt;
+use std::ops;
 
 #[derive(Debug, Clone)]
 pub enum ExpressionValue {
@@ -12,14 +12,14 @@ impl ExpressionValue {
     pub fn expression(&self) -> &Expression {
         match self {
             ExpressionValue::Expression(e) => e,
-            _ => panic!("not a number")
+            _ => panic!("not a number"),
         }
     }
 
     pub fn number(&self) -> &RationalNumber {
         match self {
             ExpressionValue::Number(n) => n,
-            _ => panic!("not a number")
+            _ => panic!("not a number"),
         }
     }
 }
@@ -98,8 +98,14 @@ impl Expression {
                     ExpressionValue::Expression(e) => expr = e,
                     ExpressionValue::Number(n) => return n,
                 }
-            } else { // if expression is only a number
-                return expr.values.get(0).expect("failed to get number").number().clone();
+            } else {
+                // if expression is only a number
+                return expr
+                    .values
+                    .get(0)
+                    .expect("failed to get number")
+                    .number()
+                    .clone();
             }
         }
     }
@@ -126,7 +132,7 @@ impl Expression {
                         break;
                     }
                 }
-                _ => {},
+                _ => {}
             }
         }
         expr
@@ -134,7 +140,12 @@ impl Expression {
 
     fn evaluate_next_operation(&self) -> Option<ExpressionValue> {
         if self.values.len() == 1 {
-            return Some(self.values.get(0).expect("failed to get only value").clone());
+            return Some(
+                self.values
+                    .get(0)
+                    .expect("failed to get only value")
+                    .clone(),
+            );
         }
 
         let mut next_op: Option<(usize, OperationPriority)> = None;
@@ -176,11 +187,10 @@ impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s: String = "".to_string();
         for (i, val) in self.values.iter().enumerate() {
-
             let val = match val {
                 ExpressionValue::Expression(e) => format!("({})", e),
                 ExpressionValue::Number(n) => n.as_str(None),
-           };
+            };
 
             let op = match self.operations.get(i) {
                 Some(op) => match op {
@@ -202,7 +212,7 @@ impl fmt::Display for Expression {
     }
 }
 
-impl <T: Into<ExpressionValue>> ops::Div<T> for Expression {
+impl<T: Into<ExpressionValue>> ops::Div<T> for Expression {
     type Output = Expression;
 
     fn div(self, rhs: T) -> Self::Output {
@@ -213,7 +223,7 @@ impl <T: Into<ExpressionValue>> ops::Div<T> for Expression {
     }
 }
 
-impl <T: Into<ExpressionValue>> ops::Mul<T> for Expression {
+impl<T: Into<ExpressionValue>> ops::Mul<T> for Expression {
     type Output = Expression;
 
     fn mul(self, rhs: T) -> Self::Output {
@@ -224,7 +234,7 @@ impl <T: Into<ExpressionValue>> ops::Mul<T> for Expression {
     }
 }
 
-impl <T: Into<ExpressionValue>> ops::Add<T> for Expression {
+impl<T: Into<ExpressionValue>> ops::Add<T> for Expression {
     type Output = Expression;
 
     fn add(self, rhs: T) -> Self::Output {
@@ -235,7 +245,7 @@ impl <T: Into<ExpressionValue>> ops::Add<T> for Expression {
     }
 }
 
-impl <T: Into<ExpressionValue>> ops::Sub<T> for Expression {
+impl<T: Into<ExpressionValue>> ops::Sub<T> for Expression {
     type Output = Expression;
 
     fn sub(self, rhs: T) -> Self::Output {
@@ -295,7 +305,10 @@ mod tests {
         assert_eq!(e.evaluate().as_f32(), 1.5);
 
         let e = crate::parse_expression("(2 + 3)/2 * 7^2").unwrap();
-        assert_eq!(e.evaluate().as_str(Some(NumberDisplayFormat::Mixed)), "122 1/2");
+        assert_eq!(
+            e.evaluate().as_str(Some(NumberDisplayFormat::Mixed)),
+            "122 1/2"
+        );
     }
 
     #[test]
