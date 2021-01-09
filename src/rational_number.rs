@@ -1,23 +1,24 @@
-use crate::math::lcm;
+use crate::math::{lcm, PlaceValue};
 use crate::{math, OooParserError};
 use regex::Regex;
 use std::ops::{Add, Neg};
 use std::str::FromStr;
 use std::{fmt, ops};
+use serde::{Serialize, Deserialize};
 
 const MIXED_NUMER_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const FRACTION_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const DECIMAL_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)\.?(\d*)(?:\s*)$";
 const DECIMAL_RE_2: &str = r"^(?:\s*)([+-]?)(?:\s*)\.(\d+)(?:\s*)$";
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum NumberDisplayFormat {
-    Decimal,
+    Decimal(Option<PlaceValue>),
     Fraction,
     Mixed,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct RationalNumber {
     pub numerator: u32,
     pub denominator: u32,
@@ -123,7 +124,7 @@ impl RationalNumber {
             numerator,
             denominator,
             negative,
-            format: NumberDisplayFormat::Decimal,
+            format: NumberDisplayFormat::Decimal(None),
         })
     }
 
@@ -164,8 +165,14 @@ impl RationalNumber {
         repeating_digit_count.is_some()
     }
 
+    // ignores specified digits after decimal
     pub fn as_decimal_str(&self) -> (String, Option<usize>) { // decimal, repeating_digit_count
-        let mut s = (self.numerator / self.denominator).to_string();
+        let negative_str = if self.negative {
+            "-"
+        } else {
+            ""
+        };
+        let mut s = format!("{}{}", negative_str, (self.numerator / self.denominator));
         let mut remainder = self.numerator % self.denominator;
         if remainder != 0 {
             s.push_str(".");
@@ -173,11 +180,8 @@ impl RationalNumber {
             remainders.push(remainder);
             while remainder != 0 {
                 remainder *= 10;
-                println!("{}", remainder);
                 let digit_str = (remainder / self.denominator).to_string();
-                println!("digit: {}", digit_str);
                 remainder %= self.denominator;
-                println!("then {}", remainder);
                 s.push_str(&digit_str);
                 if let Some(index) = remainders.iter().position(|x| *x == remainder) {
                     // let decimal_index = s.chars().position(|c| c == '.').expect("could not find decimal");
@@ -197,19 +201,42 @@ impl RationalNumber {
         };
 
         match format {
-            NumberDisplayFormat::Decimal => {
-                let remainder = self.numerator % self.denominator;
-                if remainder == 0 {
-                    if self.negative {
-                        format!("-{}", (self.numerator / self.denominator))
-                    } else {
-                        (self.numerator / self.denominator).to_string()
+            NumberDisplayFormat::Decimal(place_value) => {
+                let (original_str, repeating_digit_count) = self.as_decimal_str();
+                if let Some(place_value) = place_value {
+                    let mut s = original_str.clone();
+                    let decimal_position = s.chars().position(|c| c == '.').unwrap_or_else(|| {
+                        s.push_str(".");
+                        s.len() - 1
+                    });
+                    let digits_needed = (place_value as i64 * -1) - (s.len() - decimal_position - 1) as i64 + 1; // one extra for rounding
+                    println!("help: {}", digits_needed);
+                    if digits_needed > 0 {
+                        let digits_needed = digits_needed as usize;
+                        println!("needed: {}", digits_needed);
+                        if let Some(repeating_digit_count) = repeating_digit_count {
+                            for i in 0..digits_needed {
+                                println!("i: {}", i);
+                                let position = decimal_position + (i % repeating_digit_count) + 1;
+                                println!("position: {}", position);
+                                let next_digit = original_str.chars().nth(position).expect("failed to get repeating digit");
+                                s.push_str(&next_digit.to_string());
+                            }
+                        } else {
+                            for _i in 0..digits_needed {
+                                s.push_str("0");
+                            }
+                        }
                     }
+                    // round if needed
+                    let num = f64::from_str(&s).expect("failed to parse float");
+                    return crate::math::round_f64(num, place_value)
                 } else {
-                    if self.negative {
-                        format!("-{}", self.as_f32())
+                    if let Some(repeating_digit_count) = repeating_digit_count {
+                        let split_index = original_str.len() - repeating_digit_count;
+                        format!("{}bar{}", &original_str[..split_index], &original_str[split_index..])
                     } else {
-                        self.as_f32().to_string()
+                        original_str
                     }
                 }
             }
@@ -255,7 +282,7 @@ impl From<u32> for RationalNumber {
             numerator: n,
             denominator: 1,
             negative: false,
-            format: NumberDisplayFormat::Decimal,
+            format: NumberDisplayFormat::Decimal(None),
         }
     }
 }
@@ -266,7 +293,7 @@ impl From<i32> for RationalNumber {
             numerator: n.abs() as u32,
             denominator: 1,
             negative: n < 0,
-            format: NumberDisplayFormat::Decimal,
+            format: NumberDisplayFormat::Decimal(None),
         }
     }
 }
@@ -362,6 +389,7 @@ mod tests {
     use crate::rational_number::{NumberDisplayFormat, RationalNumber};
     use rand::Rng;
     use std::ops::Neg;
+    use crate::math::PlaceValue;
 
     #[test]
     fn adds() {
@@ -444,7 +472,7 @@ mod tests {
         assert_eq!(
             RationalNumber::parse("5 4/10")
                 .unwrap()
-                .as_str(Some(NumberDisplayFormat::Decimal)),
+                .as_str(Some(NumberDisplayFormat::Decimal(None))),
             "5.4"
         );
         assert_eq!(
@@ -496,5 +524,16 @@ mod tests {
         assert_eq!(RationalNumber::parse("1/7").unwrap().as_decimal_str(), ("0.142857".to_string(), Some(6)));
         assert_eq!(RationalNumber::parse("14/7").unwrap().as_decimal_str(), ("2".to_string(), None));
         assert_eq!(RationalNumber::parse("1/11").unwrap().as_decimal_str(), ("0.09".to_string(), Some(2)));
+    }
+
+    #[test]
+    fn prints_string_decimals() {
+        assert_eq!(RationalNumber::parse("1/5").unwrap().as_str(Some(NumberDisplayFormat::Decimal(None))), "0.2");
+        assert_eq!(RationalNumber::parse("-1/4").unwrap().as_str(Some(NumberDisplayFormat::Decimal(None))), "-0.25");
+        assert_eq!(RationalNumber::parse("1/3").unwrap().as_str(Some(NumberDisplayFormat::Decimal(Some(PlaceValue::Hundredths)))), "0.33");
+        assert_eq!(RationalNumber::parse("7/11").unwrap().as_str(Some(NumberDisplayFormat::Decimal(Some(PlaceValue::TenThousandths)))), "0.6364");
+        assert_eq!(RationalNumber::parse("21/5").unwrap().as_str(Some(NumberDisplayFormat::Decimal(Some(PlaceValue::Thousandths)))), "4.200");
+        assert_eq!(RationalNumber::parse("7/11").unwrap().as_str(Some(NumberDisplayFormat::Decimal(None))), "0.bar63");
+        assert_eq!(RationalNumber::parse("1/7").unwrap().as_str(Some(NumberDisplayFormat::Decimal(None))), "0");
     }
 }
