@@ -150,6 +150,37 @@ impl RationalNumber {
         }
     }
 
+    pub fn repeating(&self) -> bool {
+        let (_, repeating_digit_count) = self.as_decimal_str();
+        repeating_digit_count.is_some()
+    }
+
+    pub fn as_decimal_str(&self) -> (String, Option<usize>) { // decimal, repeating_digit_count
+        let mut s = (self.numerator / self.denominator).to_string();
+        let mut remainder = self.numerator % self.denominator;
+        if remainder != 0 {
+            s.push_str(".");
+            let mut remainders = Vec::new();
+            remainders.push(remainder);
+            while remainder != 0 {
+                remainder *= 10;
+                println!("{}", remainder);
+                let digit_str = (remainder / self.denominator).to_string();
+                println!("digit: {}", digit_str);
+                remainder %= self.denominator;
+                println!("then {}", remainder);
+                s.push_str(&digit_str);
+                if let Some(index) = remainders.iter().position(|x| *x == remainder) {
+                    // let decimal_index = s.chars().position(|c| c == '.').expect("could not find decimal");
+                    return (s, Some(remainders.len() - index))
+                } else {
+                    remainders.push(remainder);
+                }
+            }
+        }
+        (s, None)
+    }
+
     pub fn as_str(&self, format: Option<NumberDisplayFormat>) -> String {
         let format = match format {
             Some(f) => f,
@@ -425,5 +456,30 @@ mod tests {
                 mixed_number_str
             );
         }
+    }
+
+    #[test]
+    fn checks_repeating() {
+        assert_eq!(RationalNumber::parse("1/2").unwrap().repeating(), false);
+        assert_eq!(RationalNumber::parse("1/8").unwrap().repeating(), false);
+        assert_eq!(RationalNumber::parse("0").unwrap().repeating(), false);
+        assert_eq!(RationalNumber::parse("4/2").unwrap().repeating(), false);
+        assert_eq!(RationalNumber::parse("4/3").unwrap().repeating(), true);
+        assert_eq!(RationalNumber::parse("1/7").unwrap().repeating(), true);
+        assert_eq!(RationalNumber::parse("14/7").unwrap().repeating(), false);
+        assert_eq!(RationalNumber::parse("1/11").unwrap().repeating(), true);
+    }
+
+    #[test]
+    fn prints_decimals() {
+        assert_eq!(RationalNumber::parse("1/100").unwrap().as_decimal_str(), ("0.01".to_string(), None));
+        assert_eq!(RationalNumber::parse("19/270").unwrap().as_decimal_str(), ("0.0703".to_string(), Some(3)));
+        assert_eq!(RationalNumber::parse("0").unwrap().as_decimal_str(), ("0".to_string(), None));
+        assert_eq!(RationalNumber::parse("4/2").unwrap().as_decimal_str(), ("2".to_string(), None));
+        assert_eq!(RationalNumber::parse("4/3").unwrap().as_decimal_str(), ("1.3".to_string(), Some(1)));
+        assert_eq!(RationalNumber::parse("10/3").unwrap().as_decimal_str(), ("3.3".to_string(), Some(1)));
+        assert_eq!(RationalNumber::parse("1/7").unwrap().as_decimal_str(), ("0.142857".to_string(), Some(6)));
+        assert_eq!(RationalNumber::parse("14/7").unwrap().as_decimal_str(), ("2".to_string(), None));
+        assert_eq!(RationalNumber::parse("1/11").unwrap().as_decimal_str(), ("0.09".to_string(), Some(2)));
     }
 }

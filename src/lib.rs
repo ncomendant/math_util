@@ -3,7 +3,7 @@ use crate::rational_number::RationalNumber;
 use regex::Regex;
 
 pub mod expression;
-mod math;
+pub mod math;
 pub mod rational_number;
 
 const EXPONENT_RE: &str = r"^(?:\s*)\^(?:\s*)$";
