@@ -8,6 +8,7 @@ use std::{fmt, ops};
 const MIXED_NUMER_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const FRACTION_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const DECIMAL_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)\.?(\d*)(?:\s*)$";
+const DECIMAL_RE_2: &str = r"^(?:\s*)([+-]?)(?:\s*)\.(\d+)(?:\s*)$";
 
 #[derive(Debug, Copy, Clone)]
 pub enum NumberDisplayFormat {
@@ -90,32 +91,40 @@ impl RationalNumber {
             let negative_str = captures.get(1).unwrap().as_str();
             let whole_str = captures.get(2).unwrap().as_str();
             let remainder_str = captures.get(3).unwrap().as_str();
-
-            let negative = negative_str == "-";
-            let whole = u32::from_str(whole_str).unwrap();
-            let remainder = if let Ok(r) = u32::from_str(&remainder_str) {
-                r
-            } else {
-                0
-            };
-            let denominator = 10u32.pow(remainder_str.len() as u32);
-
-            let f = math::gcf(remainder, denominator);
-
-            let remainder = remainder / f;
-            let denominator = denominator / f;
-
-            let numerator = denominator * whole + remainder;
-
-            Ok(RationalNumber {
-                numerator,
-                denominator,
-                negative,
-                format: NumberDisplayFormat::Decimal,
-            })
+            RationalNumber::parse_decimal(negative_str, whole_str, remainder_str)
+        } else if let Some(captures) = Regex::new(DECIMAL_RE_2).unwrap().captures(s) {
+            let negative_str = captures.get(1).unwrap().as_str();
+            let whole_str = "0";
+            let remainder_str = captures.get(2).unwrap().as_str();
+            RationalNumber::parse_decimal(negative_str, whole_str, remainder_str)
         } else {
             Err(OooParserError::ParseError)
         }
+    }
+
+    fn parse_decimal(negative_str: &str, whole_str: &str, remainder_str: &str) -> Result<Self, OooParserError> {
+        let negative = negative_str == "-";
+        let whole = u32::from_str(whole_str).unwrap();
+        let remainder = if let Ok(r) = u32::from_str(&remainder_str) {
+            r
+        } else {
+            0
+        };
+        let denominator = 10u32.pow(remainder_str.len() as u32);
+
+        let f = math::gcf(remainder, denominator);
+
+        let remainder = remainder / f;
+        let denominator = denominator / f;
+
+        let numerator = denominator * whole + remainder;
+
+        Ok(RationalNumber {
+            numerator,
+            denominator,
+            negative,
+            format: NumberDisplayFormat::Decimal,
+        })
     }
 
     pub fn pow(&self, exp: &RationalNumber) -> RationalNumber {
@@ -395,6 +404,8 @@ mod tests {
     #[test]
     fn parses_specific_decimals() {
         assert_eq!(RationalNumber::parse("2.15").unwrap().as_f32(), 2.15);
+        assert_eq!(RationalNumber::parse("0.15").unwrap().as_f32(), 0.15);
+        assert_eq!(RationalNumber::parse(".15").unwrap().as_f32(), 0.15);
     }
 
     #[test]
@@ -436,14 +447,18 @@ mod tests {
                 .as_str(Some(NumberDisplayFormat::Decimal)),
             "5.4"
         );
+        assert_eq!(
+            RationalNumber::parse("8939 5776/9593").unwrap().as_str(None),
+            "8939 5776/9593"
+        );
     }
 
     #[test]
     fn parses_random_mixed_numbers() {
         let mut rng = rand::thread_rng();
-        for _i in 0..100 {
+        for _i in 0..1_000 {
             let whole = rng.gen_range(1u32, 10_000u32);
-            let denominator = rng.gen_range(1u32, 10_000u32);
+            let denominator = rng.gen_range(2u32, 10_000u32);
             let numerator = rng.gen_range(1, denominator);
 
             let neg_str = if rng.gen_bool(0.5) { "-" } else { "" };
