@@ -534,6 +534,6 @@ mod tests {
         assert_eq!(RationalNumber::parse("7/11").unwrap().as_str(Some(NumberDisplayFormat::Decimal(Some(PlaceValue::TenThousandths)))), "0.6364");
         assert_eq!(RationalNumber::parse("21/5").unwrap().as_str(Some(NumberDisplayFormat::Decimal(Some(PlaceValue::Thousandths)))), "4.200");
         assert_eq!(RationalNumber::parse("7/11").unwrap().as_str(Some(NumberDisplayFormat::Decimal(None))), "0.bar63");
-        assert_eq!(RationalNumber::parse("1/7").unwrap().as_str(Some(NumberDisplayFormat::Decimal(None))), "0");
+        assert_eq!(RationalNumber::parse("1/7").unwrap().as_str(Some(NumberDisplayFormat::Decimal(None))), "0.bar142857");
     }
 }

@@ -1,5 +1,5 @@
 [package]
-name = "rs_ooo_parser"
+name = "ooo_parser"
 version = "0.1.0"
 authors = ["Nicholas Comendant <nicholas.comendant@gmail.com>"]
 edition = "2018"
@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 regex = "1.4"
 serde = { version = "1.0", features = ["derive"] }
-
 
 [dev-dependencies]
 rand = "0.7"
