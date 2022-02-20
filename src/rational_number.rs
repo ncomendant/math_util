@@ -1,5 +1,4 @@
-use crate::math::{lcm, PlaceValue};
-use crate::{math, Result, Error};
+use crate::{Result, Error, PlaceValue};
 use regex::Regex;
 use std::ops::{Add, Neg};
 use std::str::FromStr;
@@ -113,7 +112,7 @@ impl RationalNumber {
         };
         let denominator = 10u32.pow(remainder_str.len() as u32);
 
-        let f = math::gcf(remainder, denominator);
+        let f = crate::gcf(remainder, denominator);
 
         let remainder = remainder / f;
         let denominator = denominator / f;
@@ -133,7 +132,7 @@ impl RationalNumber {
     }
 
     pub fn simplify(&self) -> RationalNumber {
-        let gcf = math::gcf(self.numerator, self.denominator);
+        let gcf = crate::gcf(self.numerator, self.denominator);
         RationalNumber {
             numerator: self.numerator / gcf,
             denominator: self.denominator / gcf,
@@ -230,7 +229,7 @@ impl RationalNumber {
                     }
                     // round if needed
                     let num = f64::from_str(&s).expect("failed to parse float");
-                    return crate::math::round_f64(num, place_value)
+                    return crate::round_f64(num, place_value)
                 } else {
                     if let Some(repeating_digit_count) = repeating_digit_count {
                         let split_index = original_str.len() - repeating_digit_count;
@@ -312,7 +311,7 @@ impl ops::Add<RationalNumber> for RationalNumber {
     type Output = RationalNumber;
 
     fn add(self, rhs: RationalNumber) -> Self::Output {
-        let denominator = lcm(self.denominator, rhs.denominator);
+        let denominator = crate::lcm(self.denominator, rhs.denominator);
         let self_factor = denominator / self.denominator;
         let rhs_factor = denominator / rhs.denominator;
         let self_numerator = self.numerator * self_factor;
@@ -389,7 +388,7 @@ mod tests {
     use crate::rational_number::{NumberDisplayFormat, RationalNumber};
     use rand::Rng;
     use std::ops::Neg;
-    use crate::math::PlaceValue;
+    use crate::PlaceValue;
 
     #[test]
     fn adds() {

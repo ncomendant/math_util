@@ -22,7 +22,7 @@ pub(crate) fn parse_first_expression_value(s: &str) -> Result<(usize, Expression
     Err(Error::ParseError)
 }
 
-pub(crate) fn parse_first_operation(expression: &str) -> Option<(usize, Operation)> {
+pub(crate) fn parse_first_operation(expression: &str) -> Option<(usize, ExpressionOperation)> {
     let exponent_re = Regex::new(EXPONENT_RE).expect("invalid regex");
     let division_re = Regex::new(DIVISION_RE).expect("invalid regex");
     let multiplication_re = Regex::new(MULTIPLICATION_RE).expect("invalid regex");
@@ -34,15 +34,15 @@ pub(crate) fn parse_first_operation(expression: &str) -> Option<(usize, Operatio
     for i in 0..=expression.len() {
         let s = &expression[0..i];
         if exponent_re.is_match(s) {
-            n = Some((i, Operation::Exponent));
+            n = Some((i, ExpressionOperation::Exponent));
         } else if division_re.is_match(s) {
-            n = Some((i, Operation::Division));
+            n = Some((i, ExpressionOperation::Division));
         } else if multiplication_re.is_match(s) {
-            n = Some((i, Operation::Multiplication));
+            n = Some((i, ExpressionOperation::Multiplication));
         } else if addition_re.is_match(s) {
-            n = Some((i, Operation::Addition));
+            n = Some((i, ExpressionOperation::Addition));
         } else if subtraction_re.is_match(s) {
-            n = Some((i, Operation::Subtraction));
+            n = Some((i, ExpressionOperation::Subtraction));
         }
     }
     n
@@ -167,7 +167,7 @@ impl From<f32> for ExpressionValue {
 #[derive(Debug, Clone)]
 pub struct Expression {
     values: Vec<ExpressionValue>,
-    operations: Vec<Operation>,
+    operations: Vec<ExpressionOperation>,
 }
 
 impl Expression {
@@ -182,18 +182,18 @@ impl Expression {
         &self.values
     }
 
-    pub fn operations(&self) -> &Vec<Operation> {
+    pub fn operations(&self) -> &Vec<ExpressionOperation> {
         &self.operations
     }
 
     pub fn pow<T: Into<ExpressionValue>>(&self, n: T) -> Self {
         let mut e = self.clone();
         e.values.push(n.into());
-        e.operations.push(Operation::Exponent);
+        e.operations.push(ExpressionOperation::Exponent);
         e
     }
 
-    pub fn push<T: Into<ExpressionValue>>(&self, operation: Operation, value: T) -> Self {
+    pub fn push<T: Into<ExpressionValue>>(&self, operation: ExpressionOperation, value: T) -> Self {
         let mut e = self.clone();
         e.operations.push(operation);
         e.values.push(value.into());
@@ -275,11 +275,11 @@ impl Expression {
             let a = *e.values.remove(next_i).number();
             let b = *e.values.remove(next_i).number();
             let val = match op {
-                Operation::Exponent => a.pow(&b),
-                Operation::Division => a / b,
-                Operation::Multiplication => a * b,
-                Operation::Addition => a + b,
-                Operation::Subtraction => a - b,
+                ExpressionOperation::Exponent => a.pow(&b),
+                ExpressionOperation::Division => a / b,
+                ExpressionOperation::Multiplication => a * b,
+                ExpressionOperation::Addition => a + b,
+                ExpressionOperation::Subtraction => a - b,
             };
             if e.values.is_empty() {
                 Some(val.into())
@@ -304,11 +304,11 @@ impl fmt::Display for Expression {
 
             let op = match self.operations.get(i) {
                 Some(op) => match op {
-                    Operation::Exponent => Some("^"),
-                    Operation::Division => Some(" -: "),
-                    Operation::Multiplication => Some(" * "),
-                    Operation::Addition => Some(" + "),
-                    Operation::Subtraction => Some(" - "),
+                    ExpressionOperation::Exponent => Some("^"),
+                    ExpressionOperation::Division => Some(" -: "),
+                    ExpressionOperation::Multiplication => Some(" * "),
+                    ExpressionOperation::Addition => Some(" + "),
+                    ExpressionOperation::Subtraction => Some(" - "),
                 },
                 None => None,
             };
@@ -328,7 +328,7 @@ impl<T: Into<ExpressionValue>> ops::Div<T> for Expression {
     fn div(self, rhs: T) -> Self::Output {
         let mut e = self.clone();
         e.values.push(rhs.into());
-        e.operations.push(Operation::Division);
+        e.operations.push(ExpressionOperation::Division);
         e
     }
 }
@@ -339,7 +339,7 @@ impl<T: Into<ExpressionValue>> ops::Mul<T> for Expression {
     fn mul(self, rhs: T) -> Self::Output {
         let mut e = self.clone();
         e.values.push(rhs.into());
-        e.operations.push(Operation::Multiplication);
+        e.operations.push(ExpressionOperation::Multiplication);
         e
     }
 }
@@ -350,7 +350,7 @@ impl<T: Into<ExpressionValue>> ops::Add<T> for Expression {
     fn add(self, rhs: T) -> Self::Output {
         let mut e = self.clone();
         e.values.push(rhs.into());
-        e.operations.push(Operation::Addition);
+        e.operations.push(ExpressionOperation::Addition);
         e
     }
 }
@@ -361,7 +361,7 @@ impl<T: Into<ExpressionValue>> ops::Sub<T> for Expression {
     fn sub(self, rhs: T) -> Self::Output {
         let mut e = self.clone();
         e.values.push(rhs.into());
-        e.operations.push(Operation::Subtraction);
+        e.operations.push(ExpressionOperation::Subtraction);
         e
     }
 }
@@ -369,7 +369,7 @@ impl<T: Into<ExpressionValue>> ops::Sub<T> for Expression {
 pub type OperationPriority = u8;
 
 #[derive(Debug, Clone)]
-pub enum Operation {
+pub enum ExpressionOperation {
     Exponent,
     Division,
     Multiplication,
@@ -377,14 +377,14 @@ pub enum Operation {
     Subtraction,
 }
 
-impl Operation {
+impl ExpressionOperation {
     fn priority(&self) -> OperationPriority {
         match self {
-            Operation::Exponent => 2,
-            Operation::Division => 1,
-            Operation::Multiplication => 1,
-            Operation::Addition => 0,
-            Operation::Subtraction => 0,
+            ExpressionOperation::Exponent => 2,
+            ExpressionOperation::Division => 1,
+            ExpressionOperation::Multiplication => 1,
+            ExpressionOperation::Addition => 0,
+            ExpressionOperation::Subtraction => 0,
         }
     }
 }
