@@ -485,9 +485,9 @@ mod tests {
     fn parses_random_mixed_numbers() {
         let mut rng = rand::thread_rng();
         for _i in 0..1_000 {
-            let whole = rng.gen_range(1u32, 10_000u32);
-            let denominator = rng.gen_range(2u32, 10_000u32);
-            let numerator = rng.gen_range(1, denominator);
+            let whole = rng.gen_range(1u32..=10_000u32);
+            let denominator = rng.gen_range(2u32..=10_000u32);
+            let numerator = rng.gen_range(1..=denominator);
 
             let neg_str = if rng.gen_bool(0.5) { "-" } else { "" };
 
