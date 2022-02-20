@@ -1,6 +1,116 @@
+use regex::Regex;
+
 use crate::rational_number::RationalNumber;
 use std::fmt;
 use std::ops;
+use crate::{Result, Error};
+
+const EXPONENT_RE: &str = r"^(?:\s*)\^(?:\s*)$";
+const DIVISION_RE: &str = r"^(?:\s*)(?:/|\-:)(?:\s*)$";
+const MULTIPLICATION_RE: &str = r"^(?:\s*)\*(?:\s*)$";
+const ADDITION_RE: &str = r"^(?:\s*)\+(?:\s*)$";
+const SUBTRACTION_RE: &str = r"^(?:\s*)\-(?:\s*)$";
+
+pub(crate) fn parse_first_expression_value(s: &str) -> Result<(usize, ExpressionValue)> {
+    if let Some((i, n)) = parse_first_number(s) {
+        return Ok((i, n.into()));
+    } else if let Ok(expr) = parse_first_expression(s) {
+        if let Some((i, expr)) = expr {
+            return Ok((i, expr.into()));
+        }
+    }
+    Err(Error::ParseError)
+}
+
+pub(crate) fn parse_first_operation(expression: &str) -> Option<(usize, Operation)> {
+    let exponent_re = Regex::new(EXPONENT_RE).expect("invalid regex");
+    let division_re = Regex::new(DIVISION_RE).expect("invalid regex");
+    let multiplication_re = Regex::new(MULTIPLICATION_RE).expect("invalid regex");
+    let addition_re = Regex::new(ADDITION_RE).expect("invalid regex");
+    let subtraction_re = Regex::new(SUBTRACTION_RE).expect("invalid regex");
+
+    let mut n = None;
+
+    for i in 0..=expression.len() {
+        let s = &expression[0..i];
+        if exponent_re.is_match(s) {
+            n = Some((i, Operation::Exponent));
+        } else if division_re.is_match(s) {
+            n = Some((i, Operation::Division));
+        } else if multiplication_re.is_match(s) {
+            n = Some((i, Operation::Multiplication));
+        } else if addition_re.is_match(s) {
+            n = Some((i, Operation::Addition));
+        } else if subtraction_re.is_match(s) {
+            n = Some((i, Operation::Subtraction));
+        }
+    }
+    n
+}
+
+pub(crate) fn parse_first_number(expression: &str) -> Option<(usize, RationalNumber)> {
+    let mut n = None;
+    for i in 0..=expression.len() {
+        if let Ok(num) = RationalNumber::parse(&expression[0..i]) {
+            n = Some((i, num))
+        }
+    }
+    n
+}
+
+pub(crate) fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)>> {
+    let mut is_bracket = None;
+    let mut start = None;
+    let mut end = None;
+    let mut depth = 0;
+    for (i, c) in expression.chars().enumerate() {
+        if let Some(is_bracket) = is_bracket {
+            if is_bracket {
+                if c == '[' {
+                    depth += 1;
+                } else if c == ']' {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i); // do not including grouping symbol at end
+                        break;
+                    }
+                }
+            } else {
+                if c == '(' {
+                    depth += 1;
+                } else if c == ')' {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i); // do not including grouping symbol at end
+                        break;
+                    }
+                }
+            }
+        } else {
+            if c == '(' {
+                is_bracket = Some(false);
+                start = Some(i + 1); // do not including grouping symbol at start
+                depth = 1;
+            } else if c == '[' {
+                is_bracket = Some(true);
+                start = Some(i + 1); // do not including grouping symbol at start
+                depth = 1;
+            }
+        }
+    }
+
+    if let Some(start) = start {
+        let end = end.ok_or(Error::ParseError)?;
+        if start < end {
+            let sub_expr = crate::parse_expression(&expression[start..end])?;
+            Ok(Some((end + 1, sub_expr)))
+        } else {
+            Err(Error::ParseError)
+        }
+    } else {
+        Ok(None)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum ExpressionValue {

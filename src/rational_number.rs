@@ -1,5 +1,5 @@
 use crate::math::{lcm, PlaceValue};
-use crate::{math, OooParserError};
+use crate::{math, Result, Error};
 use regex::Regex;
 use std::ops::{Add, Neg};
 use std::str::FromStr;
@@ -35,9 +35,9 @@ impl RationalNumber {
         f
     }
 
-    pub fn as_i32(&self) -> Result<i32, OooParserError> {
+    pub fn as_i32(&self) -> Result<i32> {
         if self.numerator % self.denominator != 0 {
-            Err(OooParserError::ParseError)
+            Err(Error::ParseError)
         } else {
             let mut n = (self.numerator / self.denominator) as i32;
             if self.negative {
@@ -47,7 +47,7 @@ impl RationalNumber {
         }
     }
 
-    pub fn parse(s: &str) -> Result<Self, OooParserError> {
+    pub fn parse(s: &str) -> Result<Self> {
         if let Some(captures) = Regex::new(MIXED_NUMER_RE).unwrap().captures(s) {
             let negative_str = captures.get(1).unwrap().as_str();
             let whole_str = captures.get(2).unwrap().as_str();
@@ -99,11 +99,11 @@ impl RationalNumber {
             let remainder_str = captures.get(2).unwrap().as_str();
             RationalNumber::parse_decimal(negative_str, whole_str, remainder_str)
         } else {
-            Err(OooParserError::ParseError)
+            Err(Error::ParseError)
         }
     }
 
-    fn parse_decimal(negative_str: &str, whole_str: &str, remainder_str: &str) -> Result<Self, OooParserError> {
+    fn parse_decimal(negative_str: &str, whole_str: &str, remainder_str: &str) -> Result<Self> {
         let negative = negative_str == "-";
         let whole = u32::from_str(whole_str).unwrap();
         let remainder = if let Ok(r) = u32::from_str(&remainder_str) {
