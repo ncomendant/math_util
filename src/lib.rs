@@ -2,6 +2,7 @@ use crate::expression::{Expression};
 use expression::ExpressionOperation;
 use rand::{Rng, prelude::SliceRandom};
 use serde::{Serialize, Deserialize};
+use std::fmt;
 
 pub mod expression;
 pub mod rational_number;
@@ -9,6 +10,14 @@ pub mod rational_number;
 #[derive(Debug, Copy, Clone)]
 pub enum Error {
     ParseError,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::ParseError => write!(f, "ParseError"),
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
