@@ -26,6 +26,15 @@ pub struct RationalNumber {
 }
 
 impl RationalNumber {
+    pub fn new(numerator: u32, denominator: u32, negative: bool, format: NumberDisplayFormat) -> Self {
+        RationalNumber {
+            numerator,
+            denominator,
+            negative,
+            format
+        }
+    }
+
     pub fn as_f32(&self) -> f32 {
         let mut f = (self.numerator as f32) / (self.denominator as f32);
         if self.negative {
@@ -150,6 +159,15 @@ impl RationalNumber {
         }
     }
 
+    pub fn abs(&self) -> RationalNumber {
+        RationalNumber {
+            negative: false,
+            numerator: self.numerator,
+            denominator: self.denominator,
+            format: self.format,
+        }
+    }
+
     pub fn reciprocal(&self) -> RationalNumber {
         RationalNumber {
             negative: self.negative,
@@ -266,6 +284,14 @@ impl RationalNumber {
                 }
             }
         }
+    }
+}
+
+impl PartialEq for RationalNumber {
+    fn eq(&self, other: &Self) -> bool {
+        let a = self.simplify();
+        let b = other.simplify();
+        a.numerator == b.numerator && a.denominator == b.denominator && a.negative == b.negative
     }
 }
 
