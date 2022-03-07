@@ -1,5 +1,6 @@
 use crate::{Result, Error, PlaceValue};
 use regex::Regex;
+use std::cmp::Ordering;
 use std::ops::{Add, Neg};
 use std::str::FromStr;
 use std::{fmt, ops};
@@ -295,6 +296,27 @@ impl PartialEq for RationalNumber {
     }
 }
 
+impl PartialOrd for RationalNumber {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let ord = if self.negative && !other.negative {
+            std::cmp::Ordering::Less
+        } else if !self.negative && other.negative {
+            std::cmp::Ordering::Greater
+        } else if self.negative || other.negative {
+            let lcm = crate::lcm(self.denominator, other.denominator);
+            let a = lcm/self.denominator;
+            let b = lcm/other.denominator;
+            (other.numerator * b).cmp(&(self.numerator * a))
+        } else { // both are positive
+            let lcm = crate::lcm(self.denominator, other.denominator);
+            let a = lcm/self.denominator;
+            let b = lcm/other.denominator;
+            (self.numerator * a).cmp(&(other.numerator * b))
+        };
+        Some(ord)
+    }
+}
+
 impl From<f32> for RationalNumber {
     fn from(n: f32) -> Self {
         RationalNumber::parse(&n.to_string()).expect("failed to parse f32")
@@ -341,6 +363,14 @@ impl ops::Add<u32> for RationalNumber {
     }
 }
 
+impl ops::Add<RationalNumber> for u32 {
+    type Output = RationalNumber;
+
+    fn add(self, rhs: RationalNumber) -> Self::Output {
+        rhs + self
+    }
+}
+
 impl ops::Add<f32> for RationalNumber {
     type Output = RationalNumber;
 
@@ -349,11 +379,27 @@ impl ops::Add<f32> for RationalNumber {
     }
 }
 
+impl ops::Add<RationalNumber> for f32 {
+    type Output = RationalNumber;
+
+    fn add(self, rhs: RationalNumber) -> Self::Output {
+        rhs + self
+    }
+}
+
 impl ops::Add<i32> for RationalNumber {
     type Output = RationalNumber;
 
     fn add(self, rhs: i32) -> Self::Output {
         self + RationalNumber::from(rhs)
+    }
+}
+
+impl ops::Add<RationalNumber> for i32 {
+    type Output = RationalNumber;
+
+    fn add(self, rhs: RationalNumber) -> Self::Output {
+        rhs + self
     }
 }
 
@@ -407,6 +453,14 @@ impl ops::Sub<u32> for RationalNumber {
     }
 }
 
+impl ops::Sub<RationalNumber> for u32 {
+    type Output = RationalNumber;
+
+    fn sub(self, rhs: RationalNumber) -> Self::Output {
+        rhs - RationalNumber::from(self)
+    }
+}
+
 impl ops::Sub<i32> for RationalNumber {
     type Output = RationalNumber;
 
@@ -415,11 +469,27 @@ impl ops::Sub<i32> for RationalNumber {
     }
 }
 
+impl ops::Sub<RationalNumber> for i32 {
+    type Output = RationalNumber;
+
+    fn sub(self, rhs: RationalNumber) -> Self::Output {
+        rhs - RationalNumber::from(self)
+    }
+}
+
 impl ops::Sub<f32> for RationalNumber {
     type Output = RationalNumber;
 
     fn sub(self, rhs: f32) -> Self::Output {
         self - RationalNumber::from(rhs)
+    }
+}
+
+impl ops::Sub<RationalNumber> for f32 {
+    type Output = RationalNumber;
+
+    fn sub(self, rhs: RationalNumber) -> Self::Output {
+        rhs - RationalNumber::from(self)
     }
 }
 
@@ -444,6 +514,14 @@ impl ops::Mul<u32> for RationalNumber {
     }
 }
 
+impl ops::Mul<RationalNumber> for u32 {
+    type Output = RationalNumber;
+
+    fn mul(self, rhs: RationalNumber) -> Self::Output {
+        self * RationalNumber::from(rhs)
+    }
+}
+
 impl ops::Mul<i32> for RationalNumber {
     type Output = RationalNumber;
 
@@ -452,10 +530,27 @@ impl ops::Mul<i32> for RationalNumber {
     }
 }
 
+impl ops::Mul<RationalNumber> for i32 {
+    type Output = RationalNumber;
+
+    fn mul(self, rhs: RationalNumber) -> Self::Output {
+        self * RationalNumber::from(rhs)
+    }
+}
+
+
 impl ops::Mul<f32> for RationalNumber {
     type Output = RationalNumber;
 
     fn mul(self, rhs: f32) -> Self::Output {
+        self * RationalNumber::from(rhs)
+    }
+}
+
+impl ops::Mul<RationalNumber> for f32 {
+    type Output = RationalNumber;
+
+    fn mul(self, rhs: RationalNumber) -> Self::Output {
         self * RationalNumber::from(rhs)
     }
 }
@@ -481,6 +576,14 @@ impl ops::Div<u32> for RationalNumber {
     }
 }
 
+impl ops::Div<RationalNumber> for u32 {
+    type Output = RationalNumber;
+
+    fn div(self, rhs: RationalNumber) -> Self::Output {
+        RationalNumber::from(rhs)/self
+    }
+}
+
 impl ops::Div<i32> for RationalNumber {
     type Output = RationalNumber;
 
@@ -489,11 +592,27 @@ impl ops::Div<i32> for RationalNumber {
     }
 }
 
+impl ops::Div<RationalNumber> for i32 {
+    type Output = RationalNumber;
+
+    fn div(self, rhs: RationalNumber) -> Self::Output {
+        RationalNumber::from(rhs)/self
+    }
+}
+
 impl ops::Div<f32> for RationalNumber {
     type Output = RationalNumber;
 
     fn div(self, rhs: f32) -> Self::Output {
         self/RationalNumber::from(rhs)
+    }
+}
+
+impl ops::Div<RationalNumber> for f32 {
+    type Output = RationalNumber;
+
+    fn div(self, rhs: RationalNumber) -> Self::Output {
+        RationalNumber::from(rhs)/self
     }
 }
 
