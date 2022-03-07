@@ -1,6 +1,5 @@
 use crate::expression::{Expression};
 use expression::ExpressionOperation;
-use rand::{Rng, prelude::SliceRandom};
 use serde::{Serialize, Deserialize};
 use std::fmt;
 
@@ -22,7 +21,7 @@ impl fmt::Display for Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-const VARIABLES: &str = "abcdefghijkmnpqrstuvwxyz";
+pub const VARIABLES: &str = "abcdefghijkmnpqrstuvwxyz";
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum PlaceValue {
@@ -164,15 +163,6 @@ pub fn round_f32(num: f32, place_value: PlaceValue) -> String {
         PlaceValue::Millionths => format!("{:.6}", num),
         _ => format!("{}", round_i32(num as i32, place_value)),
     }
-}
-
-pub fn rand_variable<R: Rng + ?Sized>(rng: &mut R) -> char {
-    *VARIABLES
-        .chars()
-        .into_iter()
-        .collect::<Vec<_>>()
-        .choose(rng)
-        .expect("failed to choose variable")
 }
 
 pub fn round_i64(num: i64, place_value: PlaceValue) -> i64 {
