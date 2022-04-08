@@ -141,6 +141,19 @@ impl RationalNumber {
         self.as_f32().powf(exp.as_f32()).into()
     }
 
+    pub fn display_format(&self) -> NumberDisplayFormat {
+        self.format
+    }
+
+    pub fn set_display_format(&self, format: NumberDisplayFormat) -> RationalNumber {
+        RationalNumber {
+            numerator: self.numerator,
+            denominator: self.denominator,
+            negative: self.negative,
+            format,
+        }
+    }
+
     pub fn simplify(&self) -> RationalNumber {
         let gcf = crate::gcf(self.numerator, self.denominator);
         RationalNumber {
@@ -228,15 +241,11 @@ impl RationalNumber {
                         s.len() - 1
                     });
                     let digits_needed = (place_value as i64 * -1) - (s.len() - decimal_position - 1) as i64 + 1; // one extra for rounding
-                    println!("help: {}", digits_needed);
                     if digits_needed > 0 {
                         let digits_needed = digits_needed as usize;
-                        println!("needed: {}", digits_needed);
                         if let Some(repeating_digit_count) = repeating_digit_count {
                             for i in 0..digits_needed {
-                                println!("i: {}", i);
                                 let position = decimal_position + (i % repeating_digit_count) + 1;
-                                println!("position: {}", position);
                                 let next_digit = original_str.chars().nth(position).expect("failed to get repeating digit");
                                 s.push_str(&next_digit.to_string());
                             }
@@ -268,7 +277,9 @@ impl RationalNumber {
             NumberDisplayFormat::Mixed => {
                 let whole = self.numerator / self.denominator;
                 let remainder = self.numerator % self.denominator;
-                if self.numerator < self.denominator {
+                if remainder == 0 && whole == 0 {
+                    "0".to_string()
+                } else if self.numerator < self.denominator {
                     self.as_str(Some(NumberDisplayFormat::Fraction))
                 } else if remainder == 0 {
                     if self.negative {
@@ -347,11 +358,7 @@ impl From<i32> for RationalNumber {
 
 impl fmt::Display for RationalNumber {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.negative {
-            write!(f, "-{}/{}", self.numerator, self.denominator)
-        } else {
-            write!(f, "{}/{}", self.numerator, self.denominator)
-        }
+        write!(f, "{}", self.as_str(None))
     }
 }
 
