@@ -525,7 +525,7 @@ impl ops::Mul<RationalNumber> for u32 {
     type Output = RationalNumber;
 
     fn mul(self, rhs: RationalNumber) -> Self::Output {
-        self * RationalNumber::from(rhs)
+        RationalNumber::from(self) * rhs
     }
 }
 
@@ -541,7 +541,7 @@ impl ops::Mul<RationalNumber> for i32 {
     type Output = RationalNumber;
 
     fn mul(self, rhs: RationalNumber) -> Self::Output {
-        self * RationalNumber::from(rhs)
+        RationalNumber::from(self) * rhs
     }
 }
 
@@ -558,7 +558,7 @@ impl ops::Mul<RationalNumber> for f32 {
     type Output = RationalNumber;
 
     fn mul(self, rhs: RationalNumber) -> Self::Output {
-        self * RationalNumber::from(rhs)
+        RationalNumber::from(self) * rhs
     }
 }
 
