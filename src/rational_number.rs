@@ -226,6 +226,10 @@ impl RationalNumber {
     }
 
     pub fn as_str(&self, format: Option<NumberDisplayFormat>) -> String {
+        if self.numerator == 0 {
+            return "0".to_string();
+        }
+
         let format = match format {
             Some(f) => f,
             None => self.format,

@@ -1,7 +1,9 @@
 use crate::expression::{Expression};
 use expression::ExpressionOperation;
+use rand::Rng;
+use rational_number::RationalNumber;
 use serde::{Serialize, Deserialize};
-use std::fmt;
+use std::{fmt, ops::Neg};
 
 pub mod expression;
 pub mod rational_number;
@@ -232,5 +234,63 @@ mod tests {
 
         let e = parse_expression("3(3 + 1) - (2 + 1)^3").unwrap();
         assert_eq!(e.evaluate().simplify().as_str(None), "-15");
+    }
+}
+
+pub trait WrapNumber {
+    fn wrap_if_neg(self) -> String;
+}
+
+impl WrapNumber for RationalNumber {
+    fn wrap_if_neg(self) -> String {
+        if self.negative {
+            format!("({})", self)
+        } else {
+            self.to_string()
+        }
+    }
+}
+
+pub trait NegFlip {
+    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self;
+}
+
+impl NegFlip for i32 {
+    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
+        if rng.gen_bool(0.5) {
+            self.neg()
+        } else {
+            self
+        }
+    }
+}
+
+impl NegFlip for i64 {
+    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
+        if rng.gen_bool(0.5) {
+            self.neg()
+        } else {
+            self
+        }
+    }
+}
+
+impl NegFlip for f32 {
+    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
+        if rng.gen_bool(0.5) {
+            self.neg()
+        } else {
+            self
+        }
+    }
+}
+
+impl NegFlip for f64 {
+    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
+        if rng.gen_bool(0.5) {
+            self.neg()
+        } else {
+            self
+        }
     }
 }
