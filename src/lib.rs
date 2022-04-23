@@ -12,6 +12,7 @@ pub enum Error {
     ParseRationalExpression,
     ParseExpression,
     ParseInt(ParseIntError),
+    DenominatorCannotBeZero,
 }
 
 impl fmt::Display for Error {
@@ -20,6 +21,7 @@ impl fmt::Display for Error {
             Error::ParseExpression => write!(f, "ParseExpressionError"),
             Error::ParseInt(e) => write!(f, "{}", e),
             Error::ParseRationalExpression =>  write!(f, "ParseRationalExpressionError"),
+            Error::DenominatorCannotBeZero => write!(f, "DenominatorCannotBeZero"),
         }
     }
 }

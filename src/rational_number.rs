@@ -60,14 +60,29 @@ impl RationalNumber {
     pub fn parse(s: &str) -> Result<Self> {
         if let Some(captures) = Regex::new(MIXED_NUMER_RE).unwrap().captures(s) {
             let negative_str = captures.get(1).unwrap().as_str();
-            let whole_str = captures.get(2).unwrap().as_str();
-            let numerator_str = captures.get(3).unwrap().as_str();
-            let denominator_str = captures.get(4).unwrap().as_str();
+            let whole_str = captures.get(2).unwrap().as_str().trim_start_matches('0');
+            let numerator_str = captures.get(3).unwrap().as_str().trim_start_matches('0');
+            let denominator_str = captures.get(4).unwrap().as_str().trim_start_matches('0');
 
             let negative = negative_str == "-";
-            let whole = u32::from_str(whole_str.trim_start_matches('0'))?;
-            let numerator = u32::from_str(&numerator_str.trim_start_matches('0'))?;
-            let denominator = u32::from_str(&denominator_str.trim_start_matches('0'))?;
+
+            let whole = if whole_str.is_empty() {
+                0
+            } else {
+                u32::from_str(whole_str)?
+            };
+
+            let numerator = if numerator_str.is_empty() {
+                0
+            } else {
+                u32::from_str(numerator_str)?
+            };
+
+            let denominator = if denominator_str.is_empty() {
+                0
+            } else {
+                u32::from_str(denominator_str)?
+            };
 
             let numerator = denominator * whole + numerator;
 
@@ -79,12 +94,22 @@ impl RationalNumber {
             })
         } else if let Some(captures) = Regex::new(FRACTION_RE).unwrap().captures(s) {
             let negative_str = captures.get(1).unwrap().as_str();
-            let numerator_str = captures.get(2).unwrap().as_str();
-            let denominator_str = captures.get(3).unwrap().as_str();
+            let numerator_str = captures.get(2).unwrap().as_str().trim_start_matches('0');
+            let denominator_str = captures.get(3).unwrap().as_str().trim_start_matches('0');
 
             let negative = negative_str == "-";
-            let numerator = u32::from_str(&numerator_str.trim_start_matches('0'))?;
-            let denominator = u32::from_str(&denominator_str.trim_start_matches('0'))?;
+
+            let numerator = if numerator_str.is_empty() {
+                0
+            } else {
+                u32::from_str(numerator_str)?
+            };
+
+            let denominator = if denominator_str.is_empty() {
+                return Err(Error::DenominatorCannotBeZero);
+            } else {
+                u32::from_str(denominator_str)?
+            };
 
             let format = if numerator >= denominator {
                 NumberDisplayFormat::Fraction
@@ -114,13 +139,23 @@ impl RationalNumber {
     }
 
     fn parse_decimal(negative_str: &str, whole_str: &str, remainder_str: &str) -> Result<Self> {
+        let whole_str = whole_str.trim_start_matches('0');
+        let remainder_str = remainder_str.trim_end_matches('0');
+
         let negative = negative_str == "-";
-        let whole = u32::from_str(whole_str.trim_start_matches('0'))?;
-        let remainder = if let Ok(r) = u32::from_str(&remainder_str.trim_end_matches('0')) {
-            r
-        } else {
+
+        let whole = if whole_str.is_empty() {
             0
+        } else {
+            u32::from_str(whole_str)?
         };
+
+        let remainder = if remainder_str.is_empty() {
+            0
+        } else {
+            u32::from_str(remainder_str)?
+        };
+
         let denominator = 10u32.pow(remainder_str.len() as u32);
 
         let f = crate::gcf(remainder, denominator);
