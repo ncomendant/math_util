@@ -1,9 +1,8 @@
 use crate::expression::{Expression};
 use expression::ExpressionOperation;
-use rand::Rng;
 use rational_number::RationalNumber;
 use serde::{Serialize, Deserialize};
-use std::{fmt, ops::Neg};
+use std::{fmt};
 
 pub mod expression;
 pub mod rational_number;
@@ -247,50 +246,6 @@ impl WrapNumber for RationalNumber {
             format!("({})", self)
         } else {
             self.to_string()
-        }
-    }
-}
-
-pub trait NegFlip {
-    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self;
-}
-
-impl NegFlip for i32 {
-    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
-        if rng.gen_bool(0.5) {
-            self.neg()
-        } else {
-            self
-        }
-    }
-}
-
-impl NegFlip for i64 {
-    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
-        if rng.gen_bool(0.5) {
-            self.neg()
-        } else {
-            self
-        }
-    }
-}
-
-impl NegFlip for f32 {
-    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
-        if rng.gen_bool(0.5) {
-            self.neg()
-        } else {
-            self
-        }
-    }
-}
-
-impl NegFlip for f64 {
-    fn neg_flip<R: Rng>(self, rng: &mut R) -> Self {
-        if rng.gen_bool(0.5) {
-            self.neg()
-        } else {
-            self
         }
     }
 }

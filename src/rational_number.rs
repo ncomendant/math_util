@@ -19,6 +19,7 @@ pub enum NumberDisplayFormat {
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RationalNumber {
     pub numerator: u32,
     pub denominator: u32,
@@ -114,8 +115,8 @@ impl RationalNumber {
 
     fn parse_decimal(negative_str: &str, whole_str: &str, remainder_str: &str) -> Result<Self> {
         let negative = negative_str == "-";
-        let whole = u32::from_str(whole_str).unwrap();
-        let remainder = if let Ok(r) = u32::from_str(&remainder_str) {
+        let whole = u32::from_str(whole_str.trim_start_matches('0')).unwrap();
+        let remainder = if let Ok(r) = u32::from_str(&remainder_str.trim_end_matches('0')) {
             r
         } else {
             0
