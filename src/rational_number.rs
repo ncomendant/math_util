@@ -47,7 +47,7 @@ impl RationalNumber {
 
     pub fn as_i32(&self) -> Result<i32> {
         if self.numerator % self.denominator != 0 {
-            Err(Error::ParseError)
+            Err(Error::ParseRationalExpression)
         } else {
             let mut n = (self.numerator / self.denominator) as i32;
             if self.negative {
@@ -65,9 +65,9 @@ impl RationalNumber {
             let denominator_str = captures.get(4).unwrap().as_str();
 
             let negative = negative_str == "-";
-            let whole = u32::from_str(whole_str).unwrap();
-            let numerator = u32::from_str(&numerator_str).unwrap();
-            let denominator = u32::from_str(&denominator_str).unwrap();
+            let whole = u32::from_str(whole_str.trim_start_matches('0'))?;
+            let numerator = u32::from_str(&numerator_str.trim_start_matches('0'))?;
+            let denominator = u32::from_str(&denominator_str.trim_start_matches('0'))?;
 
             let numerator = denominator * whole + numerator;
 
@@ -83,8 +83,8 @@ impl RationalNumber {
             let denominator_str = captures.get(3).unwrap().as_str();
 
             let negative = negative_str == "-";
-            let numerator = u32::from_str(&numerator_str).unwrap();
-            let denominator = u32::from_str(&denominator_str).unwrap();
+            let numerator = u32::from_str(&numerator_str.trim_start_matches('0'))?;
+            let denominator = u32::from_str(&denominator_str.trim_start_matches('0'))?;
 
             let format = if numerator >= denominator {
                 NumberDisplayFormat::Fraction
@@ -109,13 +109,13 @@ impl RationalNumber {
             let remainder_str = captures.get(2).unwrap().as_str();
             RationalNumber::parse_decimal(negative_str, whole_str, remainder_str)
         } else {
-            Err(Error::ParseError)
+            Err(Error::ParseRationalExpression)
         }
     }
 
     fn parse_decimal(negative_str: &str, whole_str: &str, remainder_str: &str) -> Result<Self> {
         let negative = negative_str == "-";
-        let whole = u32::from_str(whole_str.trim_start_matches('0')).unwrap();
+        let whole = u32::from_str(whole_str.trim_start_matches('0'))?;
         let remainder = if let Ok(r) = u32::from_str(&remainder_str.trim_end_matches('0')) {
             r
         } else {

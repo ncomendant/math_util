@@ -2,21 +2,31 @@ use crate::expression::{Expression};
 use expression::ExpressionOperation;
 use rational_number::RationalNumber;
 use serde::{Serialize, Deserialize};
-use std::{fmt};
+use std::{fmt, num::ParseIntError};
 
 pub mod expression;
 pub mod rational_number;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum Error {
-    ParseError,
+    ParseRationalExpression,
+    ParseExpression,
+    ParseInt(ParseIntError),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::ParseError => write!(f, "ParseError"),
+            Error::ParseExpression => write!(f, "ParseExpressionError"),
+            Error::ParseInt(e) => write!(f, "{}", e),
+            Error::ParseRationalExpression =>  write!(f, "ParseRationalExpressionError"),
         }
+    }
+}
+
+impl From<ParseIntError> for Error {
+    fn from(e: ParseIntError) -> Self {
+        Error::ParseInt(e)
     }
 }
 
@@ -203,7 +213,7 @@ pub fn parse_expression(s: &str) -> Result<Expression> {
             index += i;
             expr = expr.push(ExpressionOperation::Multiplication, val);
         } else {
-            return Err(Error::ParseError);
+            return Err(Error::ParseExpression);
         }
     }
 

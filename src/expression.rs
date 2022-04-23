@@ -19,7 +19,7 @@ pub(crate) fn parse_first_expression_value(s: &str) -> Result<(usize, Expression
             return Ok((i, expr.into()));
         }
     }
-    Err(Error::ParseError)
+    Err(Error::ParseExpression)
 }
 
 pub(crate) fn parse_first_operation(expression: &str) -> Option<(usize, ExpressionOperation)> {
@@ -100,12 +100,12 @@ pub(crate) fn parse_first_expression(expression: &str) -> Result<Option<(usize, 
     }
 
     if let Some(start) = start {
-        let end = end.ok_or(Error::ParseError)?;
+        let end = end.ok_or(Error::ParseExpression)?;
         if start < end {
             let sub_expr = crate::parse_expression(&expression[start..end])?;
             Ok(Some((end + 1, sub_expr)))
         } else {
-            Err(Error::ParseError)
+            Err(Error::ParseExpression)
         }
     } else {
         Ok(None)
