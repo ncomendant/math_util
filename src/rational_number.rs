@@ -468,10 +468,18 @@ impl ops::Add<RationalNumber> for RationalNumber {
         } else {
             if self_numerator > rhs_numerator {
                 numerator = self_numerator - rhs_numerator;
-                negative = self.negative;
+                negative = if numerator == 0 {
+                    false
+                } else {
+                    self.negative
+                };
             } else {
                 numerator = rhs_numerator - self_numerator;
-                negative = rhs.negative;
+                negative = if numerator == 0 {
+                    false
+                } else {
+                    rhs.negative
+                };
             }
         }
 
@@ -544,10 +552,15 @@ impl ops::Mul<RationalNumber> for RationalNumber {
     type Output = RationalNumber;
 
     fn mul(self, rhs: RationalNumber) -> Self::Output {
+        let numerator = self.numerator * rhs.numerator;
         RationalNumber {
-            numerator: self.numerator * rhs.numerator,
+            numerator,
             denominator: self.denominator * rhs.denominator,
-            negative: self.negative != rhs.negative,
+            negative: if numerator == 0 {
+                false
+            } else {
+                self.negative != rhs.negative
+            },
             format: evaluated_format(&self, &rhs),
         }
     }
