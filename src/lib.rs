@@ -36,7 +36,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub const VARIABLES: &str = "abcdefghijkmnpqrstuvwxyz";
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PlaceValue {
     Millions = 6,
     HundredThousands = 5,

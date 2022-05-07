@@ -11,14 +11,14 @@ const FRACTION_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s
 const DECIMAL_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)\.?(\d*)(?:\s*)$";
 const DECIMAL_RE_2: &str = r"^(?:\s*)([+-]?)(?:\s*)\.(\d+)(?:\s*)$";
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NumberDisplayFormat {
     Decimal(Option<PlaceValue>),
     Fraction,
     Mixed,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct RationalNumber {
     pub numerator: u32,
