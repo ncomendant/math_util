@@ -2,7 +2,7 @@ use crate::expression::{Expression};
 use expression::ExpressionOperation;
 use rational_number::RationalNumber;
 use serde::{Serialize, Deserialize};
-use std::{fmt, num::ParseIntError};
+use std::{fmt, num::ParseIntError, ops::Neg};
 
 pub mod expression;
 pub mod rational_number;
@@ -167,15 +167,7 @@ pub fn round_i32(num: i32, place_value: PlaceValue) -> i32 {
 }
 
 pub fn round_f32(num: f32, place_value: PlaceValue) -> String {
-    match place_value {
-        PlaceValue::Tenths => format!("{:.1}", num),
-        PlaceValue::Hundredths => format!("{:.2}", num),
-        PlaceValue::Thousandths => format!("{:.3}", num),
-        PlaceValue::TenThousandths => format!("{:.4}", num),
-        PlaceValue::HundredThousandths => format!("{:.5}", num),
-        PlaceValue::Millionths => format!("{:.6}", num),
-        _ => format!("{}", round_i32(num as i32, place_value)),
-    }
+    round_f64(num as f64, place_value)
 }
 
 pub fn round_i64(num: i64, place_value: PlaceValue) -> i64 {
@@ -185,14 +177,19 @@ pub fn round_i64(num: i64, place_value: PlaceValue) -> i64 {
 }
 
 pub fn round_f64(num: f64, place_value: PlaceValue) -> String {
-    match place_value {
-        PlaceValue::Tenths => format!("{:.1}", num),
-        PlaceValue::Hundredths => format!("{:.2}", num),
-        PlaceValue::Thousandths => format!("{:.3}", num),
-        PlaceValue::TenThousandths => format!("{:.4}", num),
-        PlaceValue::HundredThousandths => format!("{:.5}", num),
-        PlaceValue::Millionths => format!("{:.6}", num),
-        _ => format!("{}", round_i64(num as i64, place_value)),
+    let digits: i32 = i32::from(place_value);
+    if digits < 0 {
+        round::round(num, digits.neg()).to_string()
+    } else {
+        match place_value {
+            PlaceValue::Tenths => format!("{:.1}", num),
+            PlaceValue::Hundredths => format!("{:.2}", num),
+            PlaceValue::Thousandths => format!("{:.3}", num),
+            PlaceValue::TenThousandths => format!("{:.4}", num),
+            PlaceValue::HundredThousandths => format!("{:.5}", num),
+            PlaceValue::Millionths => format!("{:.6}", num),
+            _ => format!("{}", round_i64(num as i64, place_value)),
+        }
     }
 }
 
