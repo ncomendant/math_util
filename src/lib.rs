@@ -3,6 +3,7 @@ use expression::ExpressionOperation;
 use rational_number::RationalNumber;
 use serde::{Serialize, Deserialize};
 use std::{fmt, num::ParseIntError, ops::Neg};
+use ts_rs::TS;
 
 pub mod expression;
 pub mod rational_number;
@@ -36,6 +37,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub const VARIABLES: &str = "abcdefghijkmnpqrstuvwxyz";
 
+#[derive(TS)]
+#[ts(export, export_to = "../bindings/")]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PlaceValue {
     Millions = 6,

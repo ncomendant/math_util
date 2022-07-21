@@ -5,12 +5,15 @@ use std::ops::{Add, Neg};
 use std::str::FromStr;
 use std::{fmt, ops};
 use serde::{Serialize, Deserialize};
+use ts_rs::TS;
 
 const MIXED_NUMER_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s+)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const FRACTION_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)(?:\s*)/(?:\s*)(\d+)(?:\s*)$";
 const DECIMAL_RE: &str = r"^(?:\s*)([+-]?)(?:\s*)(\d+)\.?(\d*)(?:\s*)$";
 const DECIMAL_RE_2: &str = r"^(?:\s*)([+-]?)(?:\s*)\.(\d+)(?:\s*)$";
 
+#[derive(TS)]
+#[ts(export, export_to = "../bindings/")]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NumberDisplayFormat {
     Decimal(Option<PlaceValue>),
@@ -18,6 +21,8 @@ pub enum NumberDisplayFormat {
     Mixed,
 }
 
+#[derive(TS)]
+#[ts(export, export_to = "../bindings/")]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct RationalNumber {
