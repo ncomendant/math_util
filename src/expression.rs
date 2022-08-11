@@ -377,6 +377,18 @@ pub enum ExpressionOperation {
     Subtraction,
 }
 
+impl fmt::Display for ExpressionOperation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ExpressionOperation::Exponent => write!(f, "Exponent"),
+            ExpressionOperation::Division => write!(f, "Division"),
+            ExpressionOperation::Multiplication => write!(f, "Multiplication"),
+            ExpressionOperation::Addition => write!(f, "Addition"),
+            ExpressionOperation::Subtraction => write!(f, "Subtraction"),
+        }
+    }
+}
+
 impl ExpressionOperation {
     fn priority(&self) -> OperationPriority {
         match self {
