@@ -58,7 +58,7 @@ pub(crate) fn parse_first_number(expression: &str) -> Option<(usize, RationalNum
     n
 }
 
-pub(crate) fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)>> {
+pub fn parse_first_expression(expression: &str) -> Result<Option<(usize, Expression)>> {
     let mut is_bracket = None;
     let mut start = None;
     let mut end = None;
@@ -368,7 +368,7 @@ impl<T: Into<ExpressionValue>> ops::Sub<T> for Expression {
 
 pub type OperationPriority = u8;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExpressionOperation {
     Exponent,
     Division,
