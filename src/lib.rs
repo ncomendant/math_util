@@ -132,6 +132,18 @@ impl From<i32> for PlaceValue {
     }
 }
 
+pub fn factors(n: i32) -> Vec<u32> {
+    let mut v = Vec::new();
+    let mut f = n.abs();
+    while f > 0 {
+        if n % f == 0 {
+            v.push(f as u32);
+        }
+        f -= 1;
+    }
+    v
+}
+
 pub fn gcf(a: u32, b: u32) -> u32 {
     if b == 0 {
         a
