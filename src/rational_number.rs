@@ -186,6 +186,11 @@ impl RationalNumber {
         self.format
     }
 
+    pub fn round(&self, place_value: PlaceValue) -> Self {
+        let s = crate::round_f32(self.as_f32(), place_value);
+        Self::parse(&s).unwrap()
+    }
+
     pub fn set_display_format(&self, format: NumberDisplayFormat) -> RationalNumber {
         RationalNumber {
             numerator: self.numerator,
