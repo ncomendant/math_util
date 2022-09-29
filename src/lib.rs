@@ -39,7 +39,7 @@ pub const VARIABLES: &str = "abcdefghijkmnpqrstuvwxyz";
 
 #[derive(TS)]
 #[ts(export, export_to = "../bindings/")]
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PlaceValue {
     Millions = 6,
     HundredThousands = 5,

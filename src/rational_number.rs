@@ -14,7 +14,7 @@ const DECIMAL_RE_2: &str = r"^(?:\s*)([+-]?)(?:\s*)\.(\d+)(?:\s*)$";
 
 #[derive(TS)]
 #[ts(export, export_to = "../bindings/")]
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NumberDisplayFormat {
     Decimal(Option<PlaceValue>),
     Fraction,
@@ -23,7 +23,7 @@ pub enum NumberDisplayFormat {
 
 #[derive(TS)]
 #[ts(export, export_to = "../bindings/")]
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, Ord)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, Ord, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct RationalNumber {
     pub numerator: u32,
