@@ -1,7 +1,9 @@
 use crate::{Result, Error, PlaceValue};
+use rand::Rng;
+use rand::seq::SliceRandom;
 use regex::Regex;
 use std::cmp::Ordering;
-use std::ops::{Add, Neg};
+use std::ops::{Add, Neg, Range, RangeInclusive};
 use std::str::FromStr;
 use std::{fmt, ops};
 use serde::{Serialize, Deserialize};
@@ -21,6 +23,23 @@ pub enum NumberDisplayFormat {
     Mixed,
 }
 
+pub enum RangeWrapper<T> {
+    Range(Range<T>),
+    RangeInclusive(RangeInclusive<T>),
+}
+
+impl <T> From<Range<T>> for RangeWrapper<T> {
+    fn from(range: Range<T>) -> Self {
+        RangeWrapper::Range(range)
+    }
+}
+
+impl <T> From<RangeInclusive<T>> for RangeWrapper<T> {
+    fn from(range: RangeInclusive<T>) -> Self {
+        RangeWrapper::RangeInclusive(range)
+    }
+}
+
 #[derive(TS)]
 #[ts(export, export_to = "../bindings/")]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, Ord, Hash)]
@@ -33,6 +52,21 @@ pub struct RationalNumber {
 }
 
 impl RationalNumber {
+    pub fn rand_mixed<R: Rng>(rng: &mut R, range: impl Into<RangeWrapper<u32>>, denominators: &[u32], neg_prob: f64) -> RationalNumber {
+        let range  = range.into();
+        let (w, inclusive, end) = match range {
+            RangeWrapper::Range(range) => (rng.gen_range(range.clone()), false, range.end),
+            RangeWrapper::RangeInclusive(range) => (rng.gen_range(range.clone()), true, *range.end())
+        };
+        let d = *denominators.choose(rng).unwrap();
+        let n = if inclusive && w == end {
+            w * d
+        } else {
+            rng.gen_range(1..d) + (w * d)
+        };
+        RationalNumber { numerator: n, denominator: d, negative: rng.gen_bool(neg_prob), format: NumberDisplayFormat::Mixed }
+    }
+
     pub fn new(numerator: u32, denominator: u32, negative: bool, format: NumberDisplayFormat) -> Self {
         RationalNumber {
             numerator,
