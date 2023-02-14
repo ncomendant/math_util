@@ -1,6 +1,4 @@
 use crate::{Result, Error, PlaceValue};
-use rand::Rng;
-use rand::seq::SliceRandom;
 use regex::Regex;
 use std::cmp::Ordering;
 use std::ops::{Add, Neg, Range, RangeInclusive};
@@ -52,12 +50,14 @@ pub struct RationalNumber {
 }
 
 impl RationalNumber {
-    pub fn rand_mixed<R: Rng>(rng: &mut R, range: impl Into<RangeWrapper<u32>>, denominators: &[u32], neg_prob: f64) -> RationalNumber {
+    #[cfg(feature = "rand")]
+    pub fn rand_mixed<R: rand::Rng>(rng: &mut R, range: impl Into<RangeWrapper<u32>>, denominators: &[u32], neg_prob: f64) -> RationalNumber {
         let range  = range.into();
         let (w, inclusive, end) = match range {
             RangeWrapper::Range(range) => (rng.gen_range(range.clone()), false, range.end),
             RangeWrapper::RangeInclusive(range) => (rng.gen_range(range.clone()), true, *range.end())
         };
+        use rand::prelude::SliceRandom;
         let d = *denominators.choose(rng).unwrap();
         let n = if inclusive && w == end {
             w * d
